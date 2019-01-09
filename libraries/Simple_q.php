@@ -2,17 +2,16 @@
 /**
 
 CREATE TABLE `simple_q` (
-	`id` char(40) NOT NULL,
-	`created` datetime NOT NULL DEFAULT current_timestamp(),
-	`updated` datetime DEFAULT NULL,
-	`status` tinyint(3) unsigned NOT NULL DEFAULT 0,
-	`payload` longblob NOT NULL,
-	`token` char(40) CHARACTER SET latin1 DEFAULT NULL,
-	`handler` varchar(128) CHARACTER SET latin1 NOT NULL,
-	PRIMARY KEY (`id`),
-	KEY `idx_token` (`token`) USING BTREE,
-	KEY `idx_status` (`status`) USING BTREE,
-	KEY `idx_updated` (`updated`) USING BTREE
+  `created` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated` datetime DEFAULT NULL,
+  `handler` char(32) CHARACTER SET latin1 NOT NULL DEFAULT '',
+  `status` tinyint(3) unsigned NOT NULL DEFAULT 0,
+  `token` char(40) CHARACTER SET latin1 DEFAULT NULL,
+  `payload` longblob NOT NULL,
+  KEY `idx_token` (`token`) USING BTREE,
+  KEY `idx_status` (`status`) USING BTREE,
+  KEY `idx_updated` (`updated`) USING BTREE,
+  KEY `idx_handler` (`handler`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
 
  */
@@ -52,13 +51,7 @@ class Simple_q extends CI_Model {
 
 	public function add($data,$handler=null)
 	{
-		$success = $this->db->insert($this->table,['created'=>date('Y-m-d H:i:s'),'status'=>$this->status['new'],'payload'=>$this->encode($data),'handler'=>$this->get_handler($handler),'token'=>null]);
-
-		if (!$success) {
-			throw new Exception('Could not add data to Simple Q.');
-		}
-
-		return $this;
+		return $this->db->insert($this->table,['created'=>date('Y-m-d H:i:s'),'status'=>$this->status['new'],'payload'=>$this->encode($data),'handler'=>$this->get_handler($handler),'token'=>null]);
 	}
 
 	public function next($handler=null)
@@ -210,7 +203,7 @@ class Simple_q extends CI_Model {
 			$handler = $this->default_handler;
 		}
 
-		return $handler;
+		return md5($handler);
 	}
 
 } /* end class */
