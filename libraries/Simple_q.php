@@ -16,7 +16,7 @@ CREATE TABLE `simple_q` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
 
  */
-class Simple_q_model extends CI_Model {
+class Simple_q extends CI_Model {
 	protected $table = 'simple_q';
 	protected $status = ['new'=>10,'tagged'=>20,'processed'=>30,'error'=>40];
 	protected $db;
@@ -52,7 +52,13 @@ class Simple_q_model extends CI_Model {
 
 	public function add($data,$handler=null)
 	{
-		return $this->db->insert($this->table,['created'=>date('Y-m-d H:i:s'),'status'=>$this->status['new'],'payload'=>$this->encode($data),'handler'=>$this->get_handler($handler),'token'=>null]);
+		$success = $this->db->insert($this->table,['created'=>date('Y-m-d H:i:s'),'status'=>$this->status['new'],'payload'=>$this->encode($data),'handler'=>$this->get_handler($handler),'token'=>null]);
+
+		if (!$success) {
+			throw new Exception('Could not add data to Simple Q.');
+		}
+
+		return $this;
 	}
 
 	public function next($handler=null)
@@ -96,6 +102,8 @@ class Simple_q_model extends CI_Model {
 		if ($this->clean_up_days > 0) {
 			$this->db->where(['updated < now() - interval '.(int)$this->clean_up_days.' day'=>null,'status'=>$this->status['processed']])->delete($this->table);
 		}
+
+		return $this;
 	}
 
 	/* protected */
@@ -133,7 +141,7 @@ class Simple_q_model extends CI_Model {
 			}
 		}
 
-		throw new Exception('Could not get simple q token');
+		throw new Exception('Could not get Simple Q token.');
 	}
 
 	protected function encode($data)
@@ -147,7 +155,7 @@ class Simple_q_model extends CI_Model {
 		} elseif(is_array($data)) {
 			$payload->type = 'array';
 		}	else {
-			throw new Exception('Could not encode data');
+			throw new Exception('Could not encode Simple Q data.');
 		}
 
 		$payload->data = $data;
@@ -171,11 +179,11 @@ class Simple_q_model extends CI_Model {
 				$data = $payload_record->data;
 			break;
 			default:
-				throw new Exception('Could not encode data');
+				throw new Exception('Could not determine Simple Q data type.');
 		}
 
 		if (!$this->check_checksum($payload_record->checksum,$data)) {
-			throw new Exception('Decode Checksum Failed');
+			throw new Exception('Simple Q data checksum failed.');
 		}
 
 		return $data;
@@ -196,7 +204,7 @@ class Simple_q_model extends CI_Model {
 		if ($handler === null) {
 
 			if (!$this->default_handler) {
-				throw new Exception('Default handler not set.');
+				throw new Exception('Simple Q default handler not set.');
 			}
 
 			$handler = $this->default_handler;
