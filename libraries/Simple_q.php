@@ -24,6 +24,7 @@ class Simple_q extends CI_Model {
 	protected $token_length;
 	protected $token_hash;
 	protected $default_handler = false;
+	protected $json_options = JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK | JSON_PRESERVE_ZERO_FRACTION;
 
 	public function __construct()
 	{
@@ -154,7 +155,7 @@ class Simple_q extends CI_Model {
 		$payload->data = $data;
 		$payload->checksum = $this->create_checksum($data);
 
-		return json_encode($payload,JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
+		return json_encode($payload,$this->json_options);
 	}
 
 	protected function decode($record)
@@ -184,7 +185,7 @@ class Simple_q extends CI_Model {
 
 	protected function create_checksum($payload)
 	{
-		return md5(json_encode($payload,JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE));
+		return crc32(json_encode($payload,$this->json_options));
 	}
 
 	protected function check_checksum($checksum,$payload)
