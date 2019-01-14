@@ -2,141 +2,111 @@
 /**
 
 CREATE TABLE `simple_q` (
-  `created` datetime NOT NULL DEFAULT current_timestamp(),
-  `updated` datetime DEFAULT NULL,
-  `handler` char(32) CHARACTER SET latin1 NOT NULL DEFAULT '',
-  `status` tinyint(3) unsigned NOT NULL DEFAULT 0,
-  `token` char(40) CHARACTER SET latin1 DEFAULT NULL,
-  `payload` longblob NOT NULL,
-  KEY `idx_token` (`token`) USING BTREE,
-  KEY `idx_status` (`status`) USING BTREE,
-  KEY `idx_updated` (`updated`) USING BTREE,
-  KEY `idx_handler` (`handler`) USING BTREE
+	`created` datetime NOT NULL DEFAULT current_timestamp(),
+	`updated` datetime DEFAULT NULL,
+	`queue` char(32) CHARACTER SET latin1 NOT NULL DEFAULT '',
+	`status` tinyint(3) unsigned NOT NULL DEFAULT 0,
+	`token` char(40) CHARACTER SET latin1 DEFAULT NULL,
+	`payload` longblob NOT NULL,
+	KEY `idx_token` (`token`) USING BTREE,
+	KEY `idx_status` (`status`) USING BTREE,
+	KEY `idx_updated` (`updated`) USING BTREE,
+	KEY `idx_queue` (`queue`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
 
  */
 class Simple_q extends CI_Model {
 	protected $table = 'simple_q';
-	protected $status = ['new'=>10,'tagged'=>20,'processed'=>30,'error'=>40];
+	protected $status_map = ['new'=>10,'tagged'=>20,'processed'=>30,'error'=>40];
+	protected $status_map_flipped;
 	protected $db;
-	protected $clean_up_days;
+	protected $clean_up_hours;
 	protected $retag_hours;
-	protected $token_length;
 	protected $token_hash;
-	protected $default_handler = false;
+	protected $token_length;
+	protected $default_queue = false;
 	protected $json_options = JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK | JSON_PRESERVE_ZERO_FRACTION;
 
 	public function __construct()
 	{
+		include 'Simple_q_record.php';
+
+		$this->status_map_flipped = array_flip($this->status_map);
+
 		$config = config('simple_q');
 
-		$this->clean_up_days = (!isset($config['clean up days'])) ? 	7 : (int)$config['clean up days'];
-		$this->retag_hours = (!isset($config['requeue tagged hours'])) ? 	1 : (int)$config['requeue tagged hours'];
+		$this->clean_up_hours = (!isset($config['clean up hours'])) ? 	168 : (int)$config['clean up hours']; /* 7 days */
+		$this->retag_hours = (!isset($config['requeue tagged hours'])) ? 	1 : (int)$config['requeue tagged hours']; /* 1 hour */
 
-		$this->token_length = (!isset($config['token length'])) ? 	40 : (int)$config['token length'];
-		$this->token_hash = (!isset($config['token hash'])) ? 	'sha1' : $config['token hash'];
+		$this->token_hash = (!isset($config['token hash'])) ? 	'sha1' : $config['token hash']; /* sha1 */
+		$this->token_length = (!isset($config['token length'])) ? 	40 : (int)$config['token length']; /* sha1 length */
 
 		$database_group = (!isset($config['database group'])) ? 	'default' : $config['database group'];
 
 		$this->db = $this->load->database($database_group, true);
 
-		$this->cleanup();
+		$garbage_collection_percent = (!isset($config['garbage collection percent'])) ? 	50 : $config['garbage collection percent'];
+
+		if (mt_rand(0,99) < $garbage_collection_percent) {
+			$this->cleanup();
+		}
 	}
 
-	public function handler($handler)
+	public function queue($queue)
 	{
-		$this->default_handler = $handler;
+		$this->default_queue = $queue;
 
 		return $this;
 	}
 
-	public function add($data,$handler=null)
+	public function push($data,$queue=null)
 	{
-		return $this->db->insert($this->table,['created'=>date('Y-m-d H:i:s'),'status'=>$this->status['new'],'payload'=>$this->encode($data),'handler'=>$this->get_handler($handler),'token'=>null]);
+		return $this->db->insert($this->table,['created'=>date('Y-m-d H:i:s'),'status'=>$this->status_map['new'],'payload'=>$this->encode($data),'queue'=>$this->get_queue($queue),'token'=>null]);
 	}
 
-	public function next($handler=null)
+	public function pull($queue=null)
 	{
 		$token = hash($this->token_hash,uniqid('',true));
 
-		$this->db->set(['token'=>$token,'status'=>$this->status['tagged'],'updated'=>date('Y-m-d H:i:s')])->where(['token is null'=>null,'handler'=>$this->get_handler($handler)])->limit(1)->update($this->table);
+		$this->db->set(['token'=>$token,'status'=>$this->status_map['tagged'],'updated'=>date('Y-m-d H:i:s')])->where(['status'=>$this->status_map['new'],'token is null'=>null,'queue'=>$this->get_queue($queue)])->limit(1)->update($this->table);
 
 		if ($success = (bool)$this->db->affected_rows()) {
-			$dbr = $this->db->limit(1)->where(['token'=>$token])->get($this->table)->row();
+			$record = $this->db->limit(1)->where(['token'=>$token])->get($this->table)->row();
 
-			$dbr->payload = $this->decode($dbr);
+			$record->status_raw = $record->status;
+			$record->status = $this->status_map_flipped[$record->status];
+			$record->payload = $this->decode($record);
 
-			$success = $dbr;
+			$success = new Simple_q_record($record);
 		}
 
 		return $success;
 	}
 
-	public function processed($record)
-	{
-		return $this->change_status($record,'processed');
-	}
-
-	public function requeue($record)
-	{
-		return $this->change_status($record,'new',true);
-	}
-
-	public function error($record)
-	{
-		return $this->change_status($record,'error');
-	}
-
 	public function cleanup()
 	{
 		if ($this->retag_hours > 0) {
-			$this->db->set(['token'=>null,'status'=>$this->status['new'],'updated'=>date('Y-m-d H:i:s')])->where(['updated < now() - interval '.(int)$this->retag_hours.' hour'=>null,'status'=>$this->status['tagged']])->update($this->table);
+			$this->db->set(['token'=>null,'status'=>$this->status_map['new'],'updated'=>date('Y-m-d H:i:s')])->where(['updated < now() - interval '.(int)$this->retag_hours.' hour'=>null,'status'=>$this->status_map['tagged']])->update($this->table);
 		}
 
-		if ($this->clean_up_days > 0) {
-			$this->db->where(['updated < now() - interval '.(int)$this->clean_up_days.' day'=>null,'status'=>$this->status['processed']])->delete($this->table);
+		if ($this->clean_up_hours > 0) {
+			$this->db->where(['updated < now() - interval '.(int)$this->clean_up_hours.' hour'=>null,'status'=>$this->status_map['processed']])->delete($this->table);
 		}
 
 		return $this;
+	}
+
+	/* internally used by simple q record */
+	public function update($token,$status)
+	{
+		if (!array_key_exists($status,$this->status_map)) {
+			throw new Exception('Unknown Simple Q record status "'.$status.'".');
+		}
+
+		return $this->db->limit(1)->update($this->table,['token'=>null,'updated'=>date('Y-m-d H:i:s'),'status'=>$this->status_map[$status]],['token'=>$token]);
 	}
 
 	/* protected */
-
-	protected function change_status($record,$status,$clean_token=false)
-	{
-		$data = ['status'=>$this->status[$status],'updated'=>date('Y-m-d H:i:s')];
-
-		if ($clean_token) {
-			$data['token'] = null;
-		}
-
-		$this->db->limit(1)->update($this->table,$data,['token'=>$this->get_token($record)]);
-
-		return $this;
-	}
-
-	protected function get_token($record)
-	{
-		if (is_array($record)) {
-			if (isset($record['token'])) {
-				return $record['token'];
-			}
-		}
-
-		if (is_object($record)) {
-			if (!empty($record->token)) {
-				return $record->token;
-			}
-		}
-
-		if (is_string($record)) {
-			if (strlen($record) == $this->token_length) {
-				return $record;
-			}
-		}
-
-		throw new Exception('Could not get Simple Q token.');
-	}
 
 	protected function encode($data)
 	{
@@ -193,18 +163,18 @@ class Simple_q extends CI_Model {
 		return ($this->create_checksum($payload) == $checksum);
 	}
 
-	protected function get_handler($handler)
+	protected function get_queue($queue)
 	{
-		if ($handler === null) {
+		if ($queue === null) {
 
-			if (!$this->default_handler) {
-				throw new Exception('Simple Q default handler not set.');
+			if (!$this->default_queue) {
+				throw new Exception('Simple Q default queue not set.');
 			}
 
-			$handler = $this->default_handler;
+			$queue = $this->default_queue;
 		}
 
-		return md5($handler);
+		return md5($queue);
 	}
 
 } /* end class */
