@@ -107,11 +107,18 @@ class Handlebars_helper {
 	protected $partial_files = [];
 
 	/**
-	 * Internal storage to track if we've loaded partials and plugins before our first compile.
+	 * Internal storage to track if we've loaded partials.
 	 *
 	 * @var bool
 	 */
-	protected $everything_loaded = false;
+	protected $partials_loaded = false;
+
+	/**
+	 * Internal storage to track if we've loaded plugins.
+	 *
+	 * @var bool
+	 */
+	protected $plugins_loaded = false;
 
 	/**
 	 *
@@ -162,6 +169,8 @@ class Handlebars_helper {
 
 		$this->plugins_paths[$path] = $path;
 
+		$this->plugins_loaded = false;
+
 		return $this;
 	}
 
@@ -194,6 +203,8 @@ class Handlebars_helper {
 		$path = '/'.trim($partials_path,'/');
 
 		$this->partials_path[$path] = $path;
+
+		$this->partials_loaded = false;
 
 		return $this;
 	}
@@ -384,6 +395,8 @@ class Handlebars_helper {
 			$this->plugins = $plugin + $this->plugins;
 		}
 
+		$this->plugins_loaded = true;
+
 		return $this;
 	}
 
@@ -431,6 +444,8 @@ class Handlebars_helper {
 		}
 
 		$this->partial_files = include $cache_file_path;
+
+		$this->partials_loaded = true;
 
 		return $this;
 	}
@@ -605,8 +620,6 @@ class Handlebars_helper {
 		if (!$this->everything_loaded) {
 			$this->load_plugins();
 			$this->load_partials();
-
-			$this->everything_loaded = true;
 		}
 
 		$options = [
