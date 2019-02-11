@@ -617,9 +617,12 @@ class Handlebars_helper {
 	protected function _compile(string $template,string $type) : string
 	{
 		/* at first compile load everything */
-		if (!$this->everything_loaded) {
-			$this->load_plugins();
+		if (!$this->partials_loaded) {
 			$this->load_partials();
+		}
+
+		if (!$this->plugins_loaded) {
+			$this->load_plugins();
 		}
 
 		$options = [
