@@ -26,7 +26,7 @@
  * @config debug boolean
  * @config flags integer
  * @config template extension string
- * @config plugin extension string
+ * @config plugin regex string
  * @config cache path string absolute path
  * @config partials path string | array of paths
  * @config plugin path string | array of paths
@@ -37,79 +37,79 @@ use LightnCandy\LightnCandy;
 
 class Handlebars_helper {
 	/**
-	 * errors configuration array
+	 * Track whether we are in debug mode or not
 	 *
-	 * @var {{}}
+	 * @var boolean
 	 */
 	protected $debug = false;
 
 	/**
-	 * errors configuration array
+	 * LightnCandy\LightnCandy Compile Flags
 	 *
-	 * @var {{}}
+	 * @var integer
 	 */
 	protected $flags;
 
 	/**
-	 * errors configuration array
+	 * Template File Extension
 	 *
-	 * @var {{}}
+	 * @var string
 	 */
 	protected $template_extension = 'hbs';
 
 	/**
-	 * errors configuration array
+	 * LightnCandy\LightnCandy Default Compile Flags
 	 *
-	 * @var {{}}
+	 * @var integer
 	 */
 	protected $default_flags = LightnCandy::FLAG_HANDLEBARS | LightnCandy::FLAG_BESTPERFORMANCE | LightnCandy::FLAG_NAMEDARG | LightnCandy::FLAG_ADVARNAME | LightnCandy::FLAG_ERROR_LOG;
 
 	/**
-	 * errors configuration array
+	 * Compile Cache Path (absolute)
 	 *
-	 * @var {{}}
+	 * @var string
 	 */
 	protected $compiled_path = CACHEPATH;
 
 	/**
-	 * errors configuration array
+	 * Handlebars Plugin Regular Expression
 	 *
-	 * @var {{}}
+	 * @var string
 	 */
 	protected $plugin_regex = '(.*)\.plugin\.php';
 
 	/**
-	 * errors configuration array
+	 * Internal storage for loaded plugins
 	 *
-	 * @var {{}}
+	 * @var array
 	 */
 	protected $plugins = [];
 
 	/**
-	 * errors configuration array
+	 * Internal storage for folders to search for plugins
 	 *
-	 * @var {{}}
+	 * @var array
 	 */
 	protected $plugins_paths = [];
 
 	/**
-	 * errors configuration array
+	 * Internal storage for folders to search for partials
 	 *
-	 * @var {{}}
+	 * @var array
 	 */
 	protected $partials_paths = [];
 
 	/**
-	 * errors configuration array
+	 * Internal storage for partial name to file path
 	 *
-	 * @var {{}}
+	 * @var array
 	 */
 	protected $partial_files = [];
 
 	/**
-	 * errors configuration array
+	 * Internal storage to track if we've loaded partials and plugins before our first compile.
 	 *
-	 * @var {{}}
+	 * @var bool
 	 */
 	protected $everything_loaded = false;
 
