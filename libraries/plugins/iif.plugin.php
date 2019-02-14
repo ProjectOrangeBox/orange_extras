@@ -22,49 +22,49 @@ $options =>
 
 */
 
-$plugin['iif'] = function($value1,$op,$value2,$options) {
+$plugin['iif'] = function ($value1, $op, $value2, $options) {
 	$return = '';
 
 	switch ($op) {
-		case '=';
+		case '=':
 			if ($value1 == $value2) {
 				$return = $options['fn']();
 			} elseif ($options['inverse'] instanceof \Closure) {
 				$return = $options['inverse']();
 			}
 		break;
-		case '>';
+		case '>':
 			if ($value1 > $value2) {
 				$return = $options['fn']();
 			} elseif ($options['inverse'] instanceof \Closure) {
 				$return = $options['inverse']();
 			}
 		break;
-		case '<';
+		case '<':
 			if ($value1 < $value2) {
 				$return = $options['fn']();
 			} elseif ($options['inverse'] instanceof \Closure) {
 				$return = $options['inverse']();
 			}
 		break;
-		case '!=';
-		case '<>';
+		case '!=':
+		case '<>':
 			if ($value1 != $value2) {
 				$return = $options['fn']();
 			} elseif ($options['inverse'] instanceof \Closure) {
 				$return = $options['inverse']();
 			}
 		break;
-		case '>=';
-		case '=>';
+		case '>=':
+		case '=>':
 			if ($value1 >= $value2) {
 				$return = $options['fn']();
 			} elseif ($options['inverse'] instanceof \Closure) {
 				$return = $options['inverse']();
 			}
 		break;
-		case '<=';
-		case '=<';
+		case '<=':
+		case '=<':
 			if ($value1 <= $value2) {
 				$return = $options['fn']();
 			} elseif ($options['inverse'] instanceof \Closure) {

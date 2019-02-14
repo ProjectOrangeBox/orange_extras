@@ -15,10 +15,10 @@ $options =>
 	['inverse']($options['_this']) # else ???- don't forget to send in the context
 
 	_this is a the data array sent in
-	
+
 	{{xo.get name="age"}}
 */
 
-$plugin['xo:get'] = function($options) {
+$plugin['xo:get'] = function ($options) {
 	return $options['_this'][$options['hash']['name']];
 };

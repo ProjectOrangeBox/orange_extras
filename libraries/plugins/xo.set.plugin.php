@@ -15,10 +15,10 @@ $options =>
 	['inverse']($options['_this']) # else ???- don't forget to send in the context
 
 	in is a reference to the data array sent in
-	
+
 	{{xo.set name="age" value=title}}
 */
 
-$plugin['xo:set'] = function($options) use (&$in) {
+$plugin['xo:set'] = function ($options) use (&$in) {
 	$in[$options['hash']['name']] = $options['hash']['value'];
 };

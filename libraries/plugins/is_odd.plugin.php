@@ -17,7 +17,7 @@ $options =>
 	{{#is_odd variable}}
 		is odd!
 	{{/is_odd}}
-	
+
 	{{#is_odd variable}}
 		is odd!
 	{{else}}
@@ -26,7 +26,7 @@ $options =>
 
 */
 
-$plugin['is_odd'] = function($value,$options) {
+$plugin['is_odd'] = function ($value, $options) {
 	/* parse the "then" (fn) or the "else" (inverse) */
 	$return = '';
 

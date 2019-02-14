@@ -1,6 +1,7 @@
 <?php
 
-class Simple_q_record {
+class Simple_q_record
+{
 	public $payload;
 	protected $record;
 
@@ -17,18 +18,16 @@ class Simple_q_record {
 
 	public function complete()
 	{
-		ci('simple_q')->update($this->token,'processed');
+		ci('simple_q')->update($this->token, 'processed');
 	}
 
 	public function new()
 	{
-		ci('simple_q')->update($this->token,'new');
+		ci('simple_q')->update($this->token, 'new');
 	}
 
 	public function error()
 	{
-		ci('simple_q')->update($this->token,'error');
+		ci('simple_q')->update($this->token, 'error');
 	}
-
-
 } /* end class */

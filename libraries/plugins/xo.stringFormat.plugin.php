@@ -15,19 +15,19 @@ $options =>
 	['inverse']($options['_this']) # else ???- don't forget to send in the context
 
 	in is a reference to the data array sent in
-	
+
 	{{xo.error}}
 	{{xo.error status=405}}
 	{{xo.error status=404 msg="Oh Darn!"}}
 
 */
 
-$plugin['xo:stringFormat'] = function() {	
-  /* first is string */
-  $args = func_get_args();
-    
-  /* last is options - pop that off */
-  $options = array_pop($args);
+$plugin['xo:stringFormat'] = function () {
+	/* first is string */
+	$args = func_get_args();
+	
+	/* last is options - pop that off */
+	$options = array_pop($args);
   
-  return call_user_func_array('sprintf',$args);
+	return call_user_func_array('sprintf', $args);
 };

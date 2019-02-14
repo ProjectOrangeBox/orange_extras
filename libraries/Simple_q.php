@@ -15,7 +15,8 @@ CREATE TABLE `simple_q` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
 
  */
-class Simple_q extends CI_Model {
+class Simple_q extends CI_Model
+{
 	protected $table = 'simple_q';
 	protected $status_map = ['new'=>10,'tagged'=>20,'processed'=>30,'error'=>40];
 	protected $status_map_flipped;
@@ -47,7 +48,7 @@ class Simple_q extends CI_Model {
 
 		$garbage_collection_percent = (!isset($config['garbage collection percent'])) ? 	50 : $config['garbage collection percent'];
 
-		if (mt_rand(0,99) < $garbage_collection_percent) {
+		if (mt_rand(0, 99) < $garbage_collection_percent) {
 			$this->cleanup();
 		}
 	}
@@ -59,14 +60,14 @@ class Simple_q extends CI_Model {
 		return $this;
 	}
 
-	public function push($data,$queue=null)
+	public function push($data, $queue=null)
 	{
-		return $this->db->insert($this->table,['created'=>date('Y-m-d H:i:s'),'status'=>$this->status_map['new'],'payload'=>$this->encode($data),'queue'=>$this->get_queue($queue),'token'=>null]);
+		return $this->db->insert($this->table, ['created'=>date('Y-m-d H:i:s'),'status'=>$this->status_map['new'],'payload'=>$this->encode($data),'queue'=>$this->get_queue($queue),'token'=>null]);
 	}
 
 	public function pull($queue=null)
 	{
-		$token = hash($this->token_hash,uniqid('',true));
+		$token = hash($this->token_hash, uniqid('', true));
 
 		$this->db->set(['token'=>$token,'status'=>$this->status_map['tagged'],'updated'=>date('Y-m-d H:i:s')])->where(['status'=>$this->status_map['new'],'token is null'=>null,'queue'=>$this->get_queue($queue)])->limit(1)->update($this->table);
 
@@ -97,13 +98,13 @@ class Simple_q extends CI_Model {
 	}
 
 	/* internally used by simple q record */
-	public function update($token,$status)
+	public function update($token, $status)
 	{
-		if (!array_key_exists($status,$this->status_map)) {
+		if (!array_key_exists($status, $this->status_map)) {
 			throw new Exception('Unknown Simple Q record status "'.$status.'".');
 		}
 
-		return $this->db->limit(1)->update($this->table,['token'=>null,'updated'=>date('Y-m-d H:i:s'),'status'=>$this->status_map[$status]],['token'=>$token]);
+		return $this->db->limit(1)->update($this->table, ['token'=>null,'updated'=>date('Y-m-d H:i:s'),'status'=>$this->status_map[$status]], ['token'=>$token]);
 	}
 
 	/* protected */
@@ -114,23 +115,23 @@ class Simple_q extends CI_Model {
 
 		if (is_object($data)) {
 			$payload->type = 'object';
-		} elseif(is_scalar($data)) {
+		} elseif (is_scalar($data)) {
 			$payload->type = 'scalar';
-		} elseif(is_array($data)) {
+		} elseif (is_array($data)) {
 			$payload->type = 'array';
-		}	else {
+		} else {
 			throw new Exception('Could not encode Simple Q data.');
 		}
 
 		$payload->data = $data;
 		$payload->checksum = $this->create_checksum($data);
 
-		return json_encode($payload,$this->json_options);
+		return json_encode($payload, $this->json_options);
 	}
 
 	protected function decode($record)
 	{
-		$payload_record = json_decode($record->payload,false);
+		$payload_record = json_decode($record->payload, false);
 
 		switch ($payload_record->type) {
 			case 'object':
@@ -146,7 +147,7 @@ class Simple_q extends CI_Model {
 				throw new Exception('Could not determine Simple Q data type.');
 		}
 
-		if (!$this->check_checksum($payload_record->checksum,$data)) {
+		if (!$this->check_checksum($payload_record->checksum, $data)) {
 			throw new Exception('Simple Q data checksum failed.');
 		}
 
@@ -155,10 +156,10 @@ class Simple_q extends CI_Model {
 
 	protected function create_checksum($payload)
 	{
-		return crc32(json_encode($payload,$this->json_options));
+		return crc32(json_encode($payload, $this->json_options));
 	}
 
-	protected function check_checksum($checksum,$payload)
+	protected function check_checksum($checksum, $payload)
 	{
 		return ($this->create_checksum($payload) == $checksum);
 	}
@@ -166,7 +167,6 @@ class Simple_q extends CI_Model {
 	protected function get_queue($queue)
 	{
 		if ($queue === null) {
-
 			if (!$this->default_queue) {
 				throw new Exception('Simple Q default queue not set.');
 			}
@@ -176,5 +176,4 @@ class Simple_q extends CI_Model {
 
 		return md5($queue);
 	}
-
 } /* end class */

@@ -18,8 +18,8 @@ $options =>
 
 */
 
-$plugin['xo:date'] = function($arg1,$options) {
+$plugin['xo:date'] = function ($arg1, $options) {
 	$timestamp = strtotime($arg1);
 
-	return date($options['hash']['format'],$timestamp);
+	return date($options['hash']['format'], $timestamp);
 };
