@@ -2,9 +2,10 @@
 
 /* 001_init.php */
 
-class Migration_001_init extends Migration_base {
-
-	public function up() {
+class Migration_001_init extends Migration_base
+{
+	public function up()
+	{
 		echo $this->migration('up');
 		
 		ci()->db->query('CREATE TABLE `simple_q` (
@@ -23,12 +24,12 @@ class Migration_001_init extends Migration_base {
 		return true;
 	}
 
-	public function down() {
+	public function down()
+	{
 		echo $this->migration('down');
 
 		ci()->db->query('DROP TABLE `simple_q`');
 		
 		return true;
 	}
-
 } /* end migration */
