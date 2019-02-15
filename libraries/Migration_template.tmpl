@@ -1,0 +1,21 @@
+<?php
+
+/* {name}.php */
+
+class Migration_{name} extends Migration_base {
+
+	public function up() {
+		echo $this->migration('up');
+		
+		{up}
+		return true;
+	}
+
+	public function down() {
+		echo $this->migration('down');
+
+		{down}
+		return true;
+	}
+
+} /* end migration */
