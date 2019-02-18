@@ -65,6 +65,10 @@ class CreateController extends MY_Controller
 
 		$this->make('libraries');
 		$this->make('support');
+		
+		$ut_name = str_replace(' ','',ucwords(str_replace('/',' ',dirname($folder).' '.ucfirst($controller_filename))));
+		
+		$this->make('support/'.$ut_name.'Test.php','unittest',$data + ['ut_name'=>$ut_name]);
 		$this->make('support/migration');
 		$this->make('support/migration/001_init.php', '001_init', $data);
 	}
