@@ -63,8 +63,8 @@ class MigrateController extends MY_Controller
 			->help_command('Display all migration found.','migrate/find')
 			->help_command('Create an empty migration file in the application migration folder.','migrate/create "This is the migration"')
 			->help_command('Create an empty migration file in the /packages/misc/orange_snippets migration folder.','migrate/version /packages/misc/orange_snippets "This is the migration"')
-			->help_command('Auto create a navigation migration for a package.','generate_nav_for package/path')
-			->help_command('Auto create a permission migration for a package.','generate_permission_for package/path')
+			->help_command('Auto create a navigation migration for a package.','migrate/generate_nav_for package/path')
+			->help_command('Auto create a permission migration for a package.','migrate/generate_permission_for package/path')
 			->br(2);
 	}
 

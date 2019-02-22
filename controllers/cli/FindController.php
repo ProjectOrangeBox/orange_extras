@@ -16,12 +16,12 @@ class FindController extends MY_Controller
 	public function fileCliAction($filename=null)
 	{
 		if (!isset($_SERVER['argv'][2])) {
-			ci('console')->error('Please provide a filename to search for.');
+			ci('console')->error('Please provide a filename search term.');
 		}
 
 		$filename = $_SERVER['argv'][2];
 
-		ci('console')->h2('Looking for "'.$filename.'"');
+		ci('console')->h1('Looking for "'.$filename.'"');
 
 		$autoload = load_config('autoload', 'autoload');
 
@@ -29,21 +29,9 @@ class FindController extends MY_Controller
 		$autoload['packages'][] = BASEPATH;
 
 		foreach ($autoload['packages'] as $package) {
-			$files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($package, FilesystemIterator::KEY_AS_PATHNAME | FilesystemIterator::CURRENT_AS_SELF));
-	
-			foreach ($files as $name=>$file) {
-				if (!$file->isDot()) {
-					if (substr($file->getFilename(), 0, 1) != '.') {
-						$re = '/'.preg_quote($filename).'/mi';
-		
-						if (preg_match_all($re, $file->getFilename(), $matches, PREG_SET_ORDER, 0)) {
-							$parts = pathinfo(str_replace(ROOTPATH, '', $name));
-
-							$styled = str_ireplace($matches[0][0], '<cyan>'.$matches[0][0].'</cyan>', $parts['basename']);
-							
-							$this->console()->out($parts['dirname'].'/'.$styled);
-						}
-					}
+			foreach (new \RegexIterator(new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($package)), '/(.*)(?P<search>'.preg_quote($filename).')(.*)/mi', RecursiveRegexIterator::GET_MATCH) as $match) {
+				if (strpos($match[0],'/.') === false) {
+					ci('console')->out(str_replace($match['search'],'<cyan>'.$match['search'].'</cyan>',str_replace(ROOTPATH, '', $match[0])));
 				}
 			}
 		}
