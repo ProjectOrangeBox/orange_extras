@@ -2,65 +2,37 @@
 
 class ShowController extends MY_Controller
 {
-	protected $console;
-	protected $padding;
-	protected $results = [];
 	protected $files = [];
+	protected $search_paths = [];
+	protected $show;
 
-	protected $path = false;
-	protected $details = false;
 	protected $tag = 'show';
 
 	public function __construct()
 	{
 		parent::__construct();
 
-		$this->console = new League\CLImate\CLImate;
-		$this->padding = $this->console->padding(40)->char(' ');
+		$autoload = load_config('autoload', 'autoload');
+
+		$this->search_paths = explode(PATH_SEPARATOR, rtrim(APPPATH, '/').PATH_SEPARATOR.implode(PATH_SEPARATOR, $autoload['packages']));
 	}
 
-	/**
-	 * show help
-	 */
-	public function indexCliAction()
-	{
-		$this->console->out('php public/index.php cli/show');
-		$this->console->out('php public/index.php cli/show/help');
-		$this->console->tab()->info('Display this help.')->br();
-
-		$this->console->out('php public/index.php cli/show/packages');
-		$this->console->tab()->info('Show all registered package paths.')->br();
-
-		$this->console->out('php public/index.php cli/show/pear');
-		$this->console->tab()->info('Show all registered pear plugins.')->br();
-
-		$this->console->out('php public/index.php cli/show/validate');
-		$this->console->tab()->info('Show all registered validations.')->br();
-
-		$this->console->out('php public/index.php cli/show/filter');
-		$this->console->tab()->info('Show all registered filters.')->br();
-
-		$this->console->out('php public/index.php cli/show/models');
-		$this->console->tab()->info('Show all registered models.')->br();
-
-		$this->console->out('php public/index.php cli/show/controllers');
-		$this->console->tab()->info('Show all registered controllers.')->br();
-
-		$this->console->out('php public/index.php cli/show/controller-traits');
-		$this->console->tab()->info('Show all registered controller traits.')->br();
-
-		$this->console->out('php public/index.php cli/show/middleware');
-		$this->console->tab()->info('Show all registered middleware.')->br();
-
-		$this->console->tab()->purple('** adding the -p option to any command will display the path instead of the available help.')->br();
-	}
-
-	/**
-	 * show help
-	 */
 	public function helpCliAction()
 	{
-		$this->indexCliAction();
+		ci('console')
+			->h1('Help')
+			->help_command('Display this help.',['show','show/help'])
+			->help_command('Show all registered package paths.','show/packages')
+			->help_command('Show all registered pear plugins.','show/pear')
+			->help_command('Show all registered validations.','show/validate')
+			->help_command('Show all registered filters.','show/filter')
+			->help_command('Show all registered models.','show/models')
+			->help_command('Show all registered controllers.','show/controllers')
+			->help_command('Show all registered controller traits.','show/controller-traits')
+			->help_command('Show all registered middleware.','show/middleware')
+			->h2('* -p suffix will show the files path.')
+			->h2('* -d suffix will show the files details.')
+			->br(2);
 	}
 
 	/**
@@ -68,12 +40,8 @@ class ShowController extends MY_Controller
 	 */
 	public function packagesCliAction($arg=null)
 	{
-		$autoload = load_config('autoload', 'autoload');
-
-		$orange_paths = explode(PATH_SEPARATOR, rtrim(APPPATH, '/').PATH_SEPARATOR.implode(PATH_SEPARATOR, $autoload['packages']));
-
-		foreach ($orange_paths as $path) {
-			$this->console->out($path);
+		foreach ($this->search_paths as $path) {
+			ci('console')->out($path);
 		}
 	}
 
@@ -122,7 +90,7 @@ class ShowController extends MY_Controller
 	 */
 	public function controller_traitsCliAction($arg=null)
 	{
-		$this->options($arg)->loop_over('(.*)/controllers/traits/(.*)controller_trait.php');
+		$this->options($arg)->loop_over('(.*)/controllers/traits/(.*)_trait.php');
 	}
 
 	/**
@@ -137,10 +105,20 @@ class ShowController extends MY_Controller
 
 	protected function options($arg)
 	{
-		if ($arg == '_p' || $arg == '-p') {
-			$this->path = true;
-		} elseif (is_string($arg)) {
-			$this->details = $arg;
+		switch (strtolower($arg)) {
+			case '_p':
+			case '-p':
+				ci('console')->h1('Show Path');
+				$this->show = 'path';
+			break;
+			case '-d':
+			case '_d':
+				ci('console')->h1('Show Details (@details)');
+				$this->show = 'details';
+			break;
+			default:
+				ci('console')->h1('Show Help (@help)');
+				$this->show = 'help';
 		}
 
 		return $this;
@@ -148,83 +126,61 @@ class ShowController extends MY_Controller
 
 	protected function loop_over($regex)
 	{
-		$autoload = load_config('autoload', 'autoload');
+		ci('console')->h2('Searching.');
 
-		$orange_paths = explode(PATH_SEPARATOR, rtrim(APPPATH, '/').PATH_SEPARATOR.implode(PATH_SEPARATOR, $autoload['packages']));
-
-		foreach ($orange_paths as $path) {
-			$this->globr($path);
-		}
-
-		foreach ($this->files as $name=>$path) {
-			if (preg_match_all('#^'.$regex.'$#im', $path, $matches, PREG_SET_ORDER, 0)) {
-				if (is_array($matches)) {
-					$this->get_path($name, $path);
-					$this->get_help($name, $path, '@help');
-					$this->get_help_between($name, $path, '@details');
-				}
+		foreach ($this->search_paths as $path) {
+			switch ($this->show) {
+				case 'path':
+					$this->search($path,$regex,'get_path');
+				break;
+				case 'details':
+					$this->search($path,$regex,'get_between_tags','@details');
+				break;
+				case 'help':
+					$this->search($path,$regex,'get_tag','@help');
+				break;
 			}
 		}
 
-		foreach ($this->results as $name=>$entry) {
-			if ($this->path) {
-				$this->padding->label($name)->result(str_replace(ROOTPATH, '', $entry['path']));
-			} elseif ($this->details) {
-				if ($name == $this->details) {
-					$this->console->blue($name.' Detailed Help');
-					$this->console->out($this->results[$name]['details']);
-				}
-			} else {
-				if (count($entry['help'])) {
-					foreach ($entry['help'] as $help) {
-						$this->padding->label($name)->result($help);
-						$name = '';
-					}
-				} else {
-					$this->padding->label($name)->result('');
-				}
-			}
-		}
+		ci('console')->br(2);
 	}
 
-	protected function get_path($name, $path)
-	{
-		$this->results[$name]['path'] = $path;
+	protected function get_path($match,$dummy) {
+		ci('console')->out(chr(9).str_replace(ROOTPATH, '',$match[0]))->br();
 	}
 
-	protected function get_help($name, $filepath, $tag)
+	protected function get_between_tags($match, $tag)
 	{
-		$help = [];
-
-		if (preg_match_all('/'.$tag.' (.*)/m', file_get_contents($filepath), $matches, PREG_SET_ORDER, 0)) {
+		if (preg_match_all('/'.$tag.'(.*)'.$tag.'/is', file_get_contents($match[0]), $matches, PREG_SET_ORDER, 0)) {
 			foreach ($matches as $m) {
-				$help[] = $m[1];
+				ci('console')->out(chr(9).trim($m[1]));
 			}
+		} else {
+			ci('console')->out(chr(9).' --');
 		}
 
-		$this->results[$name]['help'] = $help;
+		ci('console')->br();
 	}
 
-	protected function get_help_between($name, $filepath, $tag)
+	protected function get_tag($match, $tag)
 	{
-		$details = '';
-
-		if (preg_match_all('/'.$tag.'(.*)'.$tag.'/ims', file_get_contents($filepath), $matches, PREG_SET_ORDER, 0)) {
-			$details = trim($matches[0][1]);
-		}
-
-		$this->results[$name]['details'] = $details;
-	}
-
-	protected function globr($path)
-	{
-		if (file_exists($path)) {
-			$files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path), RecursiveIteratorIterator::SELF_FIRST);
-			foreach ($files as $f) {
-				if ($f->getExtension() == 'php') {
-					$this->files[$f->getBasename('.php')] = $f->getRealPath();
-				}
+		if (preg_match_all('/'.$tag.' (.*)/i', file_get_contents($match[0]), $matches, PREG_SET_ORDER, 0)) {
+			foreach ($matches as $m) {
+				ci('console')->out(chr(9).trim($m[1]));
 			}
+		} else {
+			ci('console')->out(chr(9).' --');
+		}
+
+		ci('console')->br();
+	}
+
+	protected function search($path,$regex,$callback,$arg1=null)
+	{
+		foreach (new \RegexIterator(new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path)), '#^'.$regex.'$#i', RecursiveRegexIterator::GET_MATCH) as $match) {
+			ci('console')->info(basename($match[0],'.php'));
+			$this->$callback($match,$arg1);
 		}
 	}
-}
+
+} /* end class */

@@ -2,14 +2,11 @@
 
 class HelpController extends MY_Controller
 {
-
 	/**
 	 * Show all of the available Command Line Functions
 	 */
 	public function indexCliAction()
 	{
-		$console = new League\CLImate\CLImate;
-
 		$inspection = (new Fruit_inspector)->get_controllers_methods();
 
 		$output = [];
@@ -20,21 +17,22 @@ class HelpController extends MY_Controller
 
 				foreach ($details['methods'] as $method) {
 					if ($method['request_method'] == 'cli' && $method['parent'] != 'MY_Controller') {
+						$controller_path = substr(ltrim($controller['url'],'/'),4);
 						$action = ($method['action'] != 'index') ? '/'.$method['action'] : '';
 	
 						if (strlen($method['comments'])) {
 							$lines = explode(PHP_EOL, trim($method['comments']));
-							$comments = '';
+							$help = [];
 							
 							foreach ($lines as $l) {
 								$clean = ltrim($l, ' */\\'.chr(9).chr(10).chr(13));
 								
 								if (!empty($clean)) {
-									$comments .= chr(9).$clean.PHP_EOL;
+									$help[] = $clean;
 								}
 							}
-							
-							$output[$controller['url'].$action] = $comments;
+
+							$output[$controller_path.$action] = $help;
 						}
 					}
 				}
@@ -43,9 +41,13 @@ class HelpController extends MY_Controller
 
 		ksort($output);
 
+		ci('console')->h1('Help');
+
 		foreach ($output as $controller=>$comment) {
-			$console->border('-', (int)exec('tput cols'))->info($controller)->out($comment);
+			ci('console')->help_command($comment,$controller);
 		}
+
+		ci('console')->br(2);
 	}
 	
 	/**
@@ -53,24 +55,25 @@ class HelpController extends MY_Controller
 	 */
 	public function test_databasesCliAction()
 	{
-		$console = new League\CLImate\CLImate;
-
-		$padding = $console->padding(16)->char('.');
-
 		$db = load_config('database', 'db');
 
 		foreach ($db as $name=>$values) {
-			$console->info($name);
+			ci('console')->info($name);
 			
-			foreach (['dsn','hostname','username','password','database'] as $key) {
-				$padding->label($key)->result($values[$key]);
+			$header = $line = '';
+			
+			foreach (['dsn'=>32,'hostname'=>20,'username'=>24,'password'=>24,'database'=>24] as $key=>$padding) {
+				$header .= str_pad($key,$padding);
+				$line .= str_pad($values[$key],$padding);
 			}
+			
+			ci('console')->h1($header)->h2($line);
 			
 			try {
 				$this->load->database($name, true);
-				$console->info('* Success')->border();
+				ci('console')->info('* Success')->br(2);
 			} catch (Exception $e) {
-				$console->error('* Failed')->border();
+				ci('console')->error('* Failed',false)->hr();
 			}
 		}
 	}
@@ -80,43 +83,39 @@ class HelpController extends MY_Controller
 	 */
 	public function envCliAction()
 	{
-		$console = new League\CLImate\CLImate;
-
-		$padding = $console->padding(32)->char('.');
-
 		$env = (file_exists('.env')) ? parse_ini_file('.env', true, INI_SCANNER_TYPED) : [];
 
-		$console->border()->info('.env');
+		ci('console')->h1('.env');
 
-		$this->_env_loop($console, $padding, $env);
+		$this->_env_loop($env);
 
 		$env_local = (file_exists('.env.local')) ? parse_ini_file('.env.local', true, INI_SCANNER_TYPED) : [];
 
-		$console->info('.env.local');
+		ci('console')->h1('.env.local');
 
-		$this->_env_loop($console, $padding, $env_local);
+		$this->_env_loop($env_local);
 
-		$console->info('Merged');
+		ci('console')->h1('Merged');
 
 		$merged = array_merge($_ENV, $env, $env_local);
 			
-		$this->_env_loop($console, $padding, $merged);
+		$this->_env_loop($merged);
 	}
 	
-	protected function _env_loop(&$console, &$padding, $env)
+	protected function _env_loop($env)
 	{
 		foreach ($env as $label=>$result) {
 			if (is_array($result)) {
-				$padding->label($label)->result($result);
+				ci('console')->info($label);
 				
 				foreach ($result as $l=>$r) {
-					$padding->label('  '.$l)->result($r);
+					ci('console')->out(' '.str_pad($l,41).' '.$r);
 				}
 			} else {
-				$padding->label($label)->result($result);
+				ci('console')->out(str_pad($label,42).' '.$result);
 			}
 		}
 	
-		$console->border();
+		ci('console')->br(2);
 	}
 } /* end class */

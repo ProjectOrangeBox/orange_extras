@@ -3,14 +3,13 @@
 class CreateController extends MY_Controller
 {
 	protected $package_folder;
-	protected $console;
 
-	public function indexCliAction()
+	public function helpCliAction()
 	{
-		$console = new League\CLImate\CLImate;
-		$console->green('Syntax');
-		$console->info('php public/index.php cli/create/package {location to place package} {browser URL}');
-		$console->yellow('php public/index.php cli/create/package foldername/packagename /item/details');
+		ci('console')
+			->h1('Help')
+			->help_command(['Create a Package.','package folder path & url must be included.'],'create/package foldername/package_name /admin/details')
+			->br(2);
 	}
 
 	/**
@@ -20,30 +19,28 @@ class CreateController extends MY_Controller
 	 */
 	public function packageCliAction()
 	{
-		$this->console = new League\CLImate\CLImate;
-		
 		$package = (isset($_SERVER['argv'][2])) ? trim($_SERVER['argv'][2], '/') : '';
 		$folder =  (isset($_SERVER['argv'][3])) ? trim($_SERVER['argv'][3], '/') : '';
 
 		if (empty($package)) {
-			$this->console->error('Please provide a package path');
-			exit(1);
+			ci('console')->error('Please provide a package path.');
 		}
 
 		if (empty($folder)) {
-			$this->console->error('Please provide the controller url');
-			exit(1);
+			ci('console')->error('Please provide the controller url.');
 		}
 
 		$this->package_folder = ROOTPATH.'/packages/'.$package;
 
-		if (!is_writable(dirname($this->package_folder))) {
-			$this->console->error(dirname($this->package_folder).' is not writable.');
-		}
-
 		/* make the package folder */
-		@mkdir($this->package_folder, 0775, true);
-		@chmod($this->package_folder, 0775);
+		if (!file_exists($this->package_folder)) {
+			$umask = umask();
+			umask(0);
+			if (!@mkdir($this->package_folder,0777,true)) {
+				ci('console')->error('Could not make the package path "'.$this->package_folder.'".');
+			}
+			umask($umask);
+		}
 
 		$controller_filename = basename($folder);
 
@@ -81,10 +78,10 @@ class CreateController extends MY_Controller
 			@mkdir($this->package_folder.'/'.$name, 0775, true);
 			@chmod($this->package_folder.'/'.$name, 0775);
 		} else {
-			$template_file = realpath(__DIR__.'/../../support/templates/'.$template.'.php');
+			$template_file = realpath(__DIR__.'/../../support/templates/'.$template.'.tpl');
 			
 			if (!$template_file) {
-				$this->console->error('Template file "'.$template_file.'" not found.');
+				ci('console')->error('Template file "'.$template_file.'" not found.');
 			}
 		
 			$template = file_get_contents($template_file);
@@ -95,7 +92,7 @@ class CreateController extends MY_Controller
 	
 			$path = $this->package_folder.'/'.$name;
 
-			$this->console->info('Using Template "'.$template_file.'" to create "'.$path.'".');
+			ci('console')->out('Using Template "'.str_replace(ROOTPATH,'',$template_file).'" to create "'.str_replace(ROOTPATH,'',$path).'".');
 	
 			@mkdir(dirname($path), 0775, true);
 			file_put_contents($path, $template);

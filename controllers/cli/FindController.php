@@ -2,11 +2,12 @@
 
 class FindController extends MY_Controller
 {
-	public function indexCliAction()
+	public function helpCliAction()
 	{
-		$console = new League\CLImate\CLImate;
-		$console->green('Syntax');
-		$console->yellow('php public/index.php cli/find/file database_model');
+		ci('console')
+			->h1('Help')
+			->help_command('Find PHP files matching entered search parse.','find/file database_model')
+			->br(2);
 	}
 
 	/**
@@ -14,16 +15,13 @@ class FindController extends MY_Controller
 	 */
 	public function fileCliAction($filename=null)
 	{
-		$console = new League\CLImate\CLImate;
-
 		if (!isset($_SERVER['argv'][2])) {
-			$console->error('Please provide a filename to search for.');
-			exit(1);
+			ci('console')->error('Please provide a filename to search for.');
 		}
 
 		$filename = $_SERVER['argv'][2];
 
-		$console->info('Looking for "'.$filename.'"');
+		ci('console')->h2('Looking for "'.$filename.'"');
 
 		$autoload = load_config('autoload', 'autoload');
 
@@ -43,7 +41,7 @@ class FindController extends MY_Controller
 
 							$styled = str_ireplace($matches[0][0], '<cyan>'.$matches[0][0].'</cyan>', $parts['basename']);
 							
-							$console->out($parts['dirname'].'/'.$styled);
+							$this->console()->out($parts['dirname'].'/'.$styled);
 						}
 					}
 				}

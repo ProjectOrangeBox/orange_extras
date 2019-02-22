@@ -5,58 +5,66 @@ class Deploy_helperController extends MY_Controller
 	/**
 	 * Generate the Deploy JSON for adding all found GIT Repositories
 	 */
-	public function indexCliAction()
+	public function helpCliAction()
 	{
-		$console = new League\CLImate\CLImate;
+		ci('console')
+			->h1('Help')
+			->help_command('Generate gitx status deploy.json syntax for all loaded packages','deploy_helper/gitx_status')
+			->help_command('Generate gitx update deploy.json syntax for all loaded packages','deploy_helper/gitx_update')
+			->help_command('Generate gitx checkout deploy.json syntax for all loaded packages','deploy_helper/gitx_checkout')
+			->help_command('Generate migrate up deploy.json syntax for all loaded packages','deploy_helper/migrate_up')
+			->br(2);
+	}
 
-		$console->blue()->out('Inspecting Packages');
+	public function gitx_statusCliAction()
+	{
+		/* "gitx update {PWD}/packages/projectorangebox/extra-validations {GITBRANCH}" */
+		$this->inspect(function($folder) {
+			ci('console')->out('"gitx status {PWD}'.$folder.'",');
+		});
+	}
 
+	public function gitx_updateCliAction()
+	{
+		/* "gitx update {PWD}/packages/projectorangebox/extra-validations {GITBRANCH}" */
+		$this->inspect(function($folder) {
+			ci('console')->out('"gitx update {PWD}'.$folder.'",');
+		});
+	}
+
+	public function gitx_checkoutCliAction()
+	{
+		/* gitx checkout https://github.com/ProjectOrangeBox/Orange_v2_cli.git {PWD}/packages/projectorangebox/migrations {GITBRANCH} */
+		$this->inspect(function($folder,$package) {
+			if ($remote = $this->get_remote($package)) {
+				/* gitx checkout https://github.com/ProjectOrangeBox/Orange_v2_cli.git {PWD}/packages/projectorangebox/migrations {GITBRANCH} */
+				ci('console')->out('"gitx checkout '.$remote.' {PWD}'.$folder.' {GITBRANCH}",');
+			}
+		});
+	}
+
+	public function migrate_upCliAction()
+	{
+		/* "cd {PWD}/public;php index.php cli/migrate/up packages/projectorangebox/scaffolding" 	*/
+		$this->inspect(function($folder) {
+			ci('console')->out('"cd {PWD};php public/index.php cli/migrate/up'.$folder.'",');
+		});
+	}
+
+	protected function inspect($callback)
+	{
 		$autoload = load_config('autoload', 'autoload');
 		$packages = $autoload['packages'];
 
 		/* this adds root application folder */
 		$packages = array_merge([''], $packages);
 
-		$progress = $console->progress()->total(count($packages));
-
 		sort($packages);
 
+		ci('console')->h1('Deploy Syntax - copy and paste as needed.');
+
 		foreach ($packages as $idx=>$package) {
-			$progress->current($idx+1);
-
-			$folder = '/'.trim(str_replace(ROOTPATH, '', $package), '/');
-
-			/* "gitx update {PWD}/packages/projectorangebox/extra-validations {GITBRANCH}" */
-			$git_update[] = '"gitx update {PWD}'.$folder.'"';
-
-			/* "gitx update {PWD}/packages/projectorangebox/extra-validations {GITBRANCH}" */
-			$git_status[] = '"gitx status {PWD}'.$folder.'"';
-
-			/* "cd {PWD}/public;php index.php cli/migrate/up packages/projectorangebox/scaffolding" 	*/
-			$migrations[] = '"cd {PWD};php public/index.php cli/migrate/up'.$folder.'"';
-
-			if ($remote = $this->get_remote($package)) {
-				/* gitx checkout https://github.com/ProjectOrangeBox/Orange_v2_cli.git {PWD}/packages/projectorangebox/migrations {GITBRANCH} */
-				$checkout[] = '"gitx checkout '.$remote.' {PWD}'.$folder.' {GITBRANCH}"';
-			}
-		}
-
-		$console->br()->blue()->out('Deploy commands - copy and paste as needed.');
-
-		if (is_array($git_update)) {
-			$console->br()->out(implode(','.PHP_EOL, $git_update));
-		}
-
-		if (is_array($git_status)) {
-			$console->br()->out(implode(','.PHP_EOL, $git_status));
-		}
-
-		if (is_array($checkout)) {
-			$console->br()->out(implode(','.PHP_EOL, $checkout));
-		}
-
-		if (is_array($migrations)) {
-			$console->br()->out(implode(','.PHP_EOL, $migrations));
+			$callback('/'.trim(str_replace(ROOTPATH, '', $package), '/'),$package);
 		}
 	}
 
@@ -69,7 +77,7 @@ class Deploy_helperController extends MY_Controller
 
 			foreach ($lines as $idx=>$line) {
 				$line = trim($line);
-			
+
 				if (substr($line, 0, 9) == '[remote "' && substr($line, -2) == '"]') {
 					$parts = explode(' ', trim($lines[$idx+1]));
 
