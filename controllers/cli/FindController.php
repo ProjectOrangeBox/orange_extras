@@ -15,11 +15,7 @@ class FindController extends MY_Controller
 	 */
 	public function fileCliAction($filename=null)
 	{
-		if (!isset($_SERVER['argv'][2])) {
-			ci('console')->error('Please provide a filename search term.');
-		}
-
-		$filename = $_SERVER['argv'][2];
+		$filename = ci('console')->get_arg(1,true,'file search term');
 
 		ci('console')->h1('Looking for "'.$filename.'"');
 

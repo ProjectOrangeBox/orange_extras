@@ -19,14 +19,14 @@ class HelpController extends MY_Controller
 					if ($method['request_method'] == 'cli' && $method['parent'] != 'MY_Controller') {
 						$controller_path = substr(ltrim($controller['url'],'/'),4);
 						$action = ($method['action'] != 'index') ? '/'.$method['action'] : '';
-	
+
 						if (strlen($method['comments'])) {
 							$lines = explode(PHP_EOL, trim($method['comments']));
 							$help = [];
-							
+
 							foreach ($lines as $l) {
 								$clean = ltrim($l, ' */\\'.chr(9).chr(10).chr(13));
-								
+
 								if (!empty($clean)) {
 									$help[] = $clean;
 								}
@@ -47,9 +47,11 @@ class HelpController extends MY_Controller
 			ci('console')->help_command($comment,$controller);
 		}
 
+		ci('console')->br()->white('** if you have spark installed you can just type "spark '.$controller.'".');
+
 		ci('console')->br(2);
 	}
-	
+
 	/**
 	 * Test all database connections (no query's run)
 	 */
@@ -59,16 +61,16 @@ class HelpController extends MY_Controller
 
 		foreach ($db as $name=>$values) {
 			ci('console')->info($name);
-			
+
 			$header = $line = '';
-			
+
 			foreach (['dsn'=>32,'hostname'=>20,'username'=>24,'password'=>24,'database'=>24] as $key=>$padding) {
 				$header .= str_pad($key,$padding);
 				$line .= str_pad($values[$key],$padding);
 			}
-			
+
 			ci('console')->h1($header)->h2($line);
-			
+
 			try {
 				$this->load->database($name, true);
 				ci('console')->info('* Success')->br(2);
@@ -77,7 +79,7 @@ class HelpController extends MY_Controller
 			}
 		}
 	}
-	
+
 	/**
 	 * Display current .env and .env.local as well as merged results
 	 */
@@ -98,16 +100,16 @@ class HelpController extends MY_Controller
 		ci('console')->h1('Merged');
 
 		$merged = array_merge($_ENV, $env, $env_local);
-			
+
 		$this->_env_loop($merged);
 	}
-	
+
 	protected function _env_loop($env)
 	{
 		foreach ($env as $label=>$result) {
 			if (is_array($result)) {
 				ci('console')->info($label);
-				
+
 				foreach ($result as $l=>$r) {
 					ci('console')->out(' '.str_pad($l,41).' '.$r);
 				}
@@ -115,7 +117,7 @@ class HelpController extends MY_Controller
 				ci('console')->out(str_pad($label,42).' '.$result);
 			}
 		}
-	
+
 		ci('console')->br(2);
 	}
 } /* end class */

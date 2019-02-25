@@ -19,16 +19,8 @@ class CreateController extends MY_Controller
 	 */
 	public function packageCliAction()
 	{
-		$package = (isset($_SERVER['argv'][2])) ? trim($_SERVER['argv'][2], '/') : '';
-		$folder =  (isset($_SERVER['argv'][3])) ? trim($_SERVER['argv'][3], '/') : '';
-
-		if (empty($package)) {
-			ci('console')->error('Please provide a package path.');
-		}
-
-		if (empty($folder)) {
-			ci('console')->error('Please provide the controller url.');
-		}
+		$package = trim(ci('console')->get_arg(1,true,'package path'),'/');
+		$folder = trim(ci('console')->get_arg(2,true,'controller url'),'/');
 
 		$this->package_folder = ROOTPATH.'/packages/'.$package;
 
@@ -62,9 +54,9 @@ class CreateController extends MY_Controller
 
 		$this->make('libraries');
 		$this->make('support');
-		
+
 		$ut_name = str_replace(' ','',ucwords(str_replace('/',' ',dirname($folder).' '.ucfirst($controller_filename))));
-		
+
 		$this->make('support/'.$ut_name.'Test.php','unittest',$data + ['ut_name'=>$ut_name]);
 		$this->make('support/migration');
 		$this->make('support/migration/001_init.php', '001_init', $data);
@@ -73,27 +65,27 @@ class CreateController extends MY_Controller
 	protected function make($name, $template=null, $data=[])
 	{
 		$name = ltrim($name, '/');
-	
+
 		if (!$template) {
 			@mkdir($this->package_folder.'/'.$name, 0775, true);
 			@chmod($this->package_folder.'/'.$name, 0775);
 		} else {
 			$template_file = realpath(__DIR__.'/../../support/templates/'.$template.'.tpl');
-			
+
 			if (!$template_file) {
 				ci('console')->error('Template file "'.$template_file.'" not found.');
 			}
-		
+
 			$template = file_get_contents($template_file);
-	
+
 			foreach ($data as $key=>$val) {
 				$template = str_replace('{'.$key.'}', $val, $template);
 			}
-	
+
 			$path = $this->package_folder.'/'.$name;
 
 			ci('console')->out('Using Template "'.str_replace(ROOTPATH,'',$template_file).'" to create "'.str_replace(ROOTPATH,'',$path).'".');
-	
+
 			@mkdir(dirname($path), 0775, true);
 			file_put_contents($path, $template);
 			@chmod($path, 0775);

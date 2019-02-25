@@ -12,7 +12,7 @@
  * Console class.
  *
  * Wrapper around \League\CLImate\CLImate
- * provides additional methods
+ * with additional methods provided
  *
  * @package CodeIgniter / Orange
  * @author Don Myers
@@ -40,7 +40,7 @@ class Console
 	 *
 	 * @var string
 	 */
-	protected $command_prefix = '<white>php public/index.php</white> cli/';
+	protected $command_prefix = '/cli/';
 
 	/**
 	 * __construct
@@ -174,13 +174,30 @@ class Console
 	 */
 	public function error(string $txt,bool $die = true) : Console
 	{
-		$this->climate->red()->bold()->out($txt);
+		$this->climate->red()->bold()->out('⛔ '.$txt);
 
 		if ($die) {
+			$this->climate->br();
 			exit(1);
 		}
 
 		return $this;
+	}
+
+	public function get_arg(int $number,bool $required = false,string $text = null,$default = null)
+	{
+		/* the first useable arg is 2 */
+		$number = $number + 1;
+
+		$arg = (!isset($_SERVER['argv'][$number])) ? $default : $_SERVER['argv'][$number];
+
+		if ($required && empty($arg)) {
+			$err = ($text) ? 'a '.$text.' (argument '.($number - 1).')' : 'argument '.($number - 1);
+
+			ci('console')->br()->error('Please provide '.$err.'.');
+		}
+
+		return $arg;
 	}
 
 } /* end class */

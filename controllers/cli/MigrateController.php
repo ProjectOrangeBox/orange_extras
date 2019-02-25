@@ -32,8 +32,6 @@ class MigrateController extends MY_Controller
 	{
 		parent::__construct();
 
-		$this->args = $_SERVER['argv'];
-
 		$this->package_folder_path = $this->get_package();
 		$this->migration_folder_path = '/'.trim(str_replace(ROOTPATH, '', config('migration.migration_path', '/support/migrations/')), '/');
 
@@ -81,7 +79,7 @@ class MigrateController extends MY_Controller
 	 */
 	public function downCliAction()
 	{
-		ci('package_migration_cli_wrapper')->version((int)$this->get_section($this->version_arg, 'version'));
+		ci('package_migration_cli_wrapper')->version((int)ci('console')->get_arg($this->version_arg,true,'version'));
 	}
 
 	/* built in functions */
@@ -129,7 +127,7 @@ class MigrateController extends MY_Controller
 	 */
 	public function versionCliAction()
 	{
-		ci('package_migration_cli_wrapper')->version((int)$this->get_section($this->version_arg, 'version'));
+		ci('package_migration_cli_wrapper')->version((int)ci('console')->get_arg($this->version_arg,true,'version'));
 	}
 
 	/**
@@ -157,7 +155,7 @@ class MigrateController extends MY_Controller
 	 */
 	public function createCliAction()
 	{
-		ci('package_migration_cli_wrapper')->create($this->get_section($this->description_arg, 'description'));
+		ci('package_migration_cli_wrapper')->create(ci('console')->get_arg($this->description_arg,true,'description'));
 	}
 
 	/* protected */
@@ -229,11 +227,7 @@ class MigrateController extends MY_Controller
 
 	protected function build_migration_for(string $comment,array $groups,string $file_prefix)
 	{
-		if (!isset($_SERVER['argv'][2])) {
-			$this->show_migrations_available('Please enter a dynamic controller url.', $groups);
-		}
-
-		$source_for = str_replace('-', '_', trim($_SERVER['argv'][2], '/'));
+		$source_for = str_replace('-', '_', trim(ci('console')->get_arg(1,true,'dynamic controller url'), '/'));
 
 		if (!isset($groups[$source_for])) {
 			$this->show_migrations_available('No dynamic controller urls found at "'.$source_for.'"', $groups);
