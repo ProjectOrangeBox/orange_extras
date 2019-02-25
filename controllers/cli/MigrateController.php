@@ -21,7 +21,6 @@ class MigrateController extends MY_Controller
 {
 	protected $version_arg = 1;
 	protected $description_arg = 1;
-	protected $folder_arg = 1;
 	protected $migration_folder_path = '';
 	protected $package_folder_path = '';
 	protected $packages = [];
@@ -32,12 +31,12 @@ class MigrateController extends MY_Controller
 	{
 		parent::__construct();
 
-		$this->package_folder_path = $this->get_package();
-		$this->migration_folder_path = '/'.trim(str_replace(ROOTPATH, '', config('migration.migration_path', '/support/migrations/')), '/');
-
 		$autoload = load_config('autoload', 'autoload');
 
 		$this->packages = $autoload['packages'];
+
+		$this->migration_folder_path = '/'.trim(str_replace(ROOTPATH, '', config('migration.migration_path', '/support/migrations/')), '/');
+		$this->package_folder_path = $this->get_package();
 
 		ci('package_migration_cli_wrapper')->set_path($this->package_folder_path, $this->migration_folder_path);
 	}
@@ -55,14 +54,14 @@ class MigrateController extends MY_Controller
 			->help_command('Run all migrations down to number 3 in the application migration folder.','migrate/down 3')
 			->help_command('Run all migrations down to number 3 in the /packages/misc/orange_snippets migration folder.','migrate/down /packages/misc/orange_snippets 3')
 			->help_command(['Migrates up to the current version in the application migration folder*','Whatever is set for $config[\'migration_version\'] in application/config/migration.php.'],'migrate/current')
-			->help_command(['Migrates up to the current version in the /packages/misc/orange_snippets migration folder','Whatever is set for $config[\'migration_version@package folder\'] in application/config/migration.php.'],'migrate/current /packages/misc/orange_snippets')
-			->help_command('Run all migrations in the application migration folder up or down to 3.','migrate/version 3')
-			->help_command('Run all migrations in the /packages/misc/orange_snippets migration folder up or down to 3.','migrate/version /packages/misc/orange_snippets 3')
+			->help_command(['Migrates up to the current version in the /packages/misc/orange_snippets migration folder','Whatever is set for $config[\'migration_version@packages/misc/orange_snippets\'] in application/config/migration.php.'],'migrate/current /packages/misc/orange_snippets')
+			->help_command('Run all migrations in the application migration folder up or down to 3.','packages/misc/orange_snippets 3')
+			->help_command('Run all migrations in the /packages/misc/orange_snippets migration folder up or down to 3.','packages/misc/orange_snippets /packages/misc/orange_snippets 3')
 			->help_command('Display all migration found.','migrate/find')
 			->help_command('Create an empty migration file in the application migration folder.','migrate/create "This is the migration"')
-			->help_command('Create an empty migration file in the /packages/misc/orange_snippets migration folder.','migrate/version /packages/misc/orange_snippets "This is the migration"')
-			->help_command('Auto create a navigation migration for a package.','migrate/generate_nav_for package/path')
-			->help_command('Auto create a permission migration for a package.','migrate/generate_permission_for package/path')
+			->help_command('Create an empty migration file in the /packages/misc/orange_snippets migration folder.','migrate/create /packages/misc/orange_snippets "This is the migration"')
+			->help_command('Auto create a navigation migration for a package.','migrate/generate_nav_for /packages/misc/orange_snippets')
+			->help_command('Auto create a permission migration for a package.','migrate/generate_permission_for /packages/misc/orange_snippets')
 			->br(2);
 	}
 
@@ -155,58 +154,43 @@ class MigrateController extends MY_Controller
 	 */
 	public function createCliAction()
 	{
-		ci('package_migration_cli_wrapper')->create(ci('console')->get_arg($this->description_arg,true,'description'));
+		$description = ci('console')->get_arg($this->description_arg,true,'description');
+
+		ci('package_migration_cli_wrapper')->create($description);
 	}
 
 	/* protected */
-	protected function get_package()
+	protected function get_package(bool $create = false)
 	{
 		$path = '';
 
-		/* did they include anything? */
-		$raw_folder = $this->get_section($this->folder_arg, 'package folder', false);
+		$package_path = ci('console')->get_arg(1,false,null,false);
 
-		/* is arg1 a folder */
-		if (strpos($raw_folder, '/') !== false) {
-			/* yes it's a package folder - let's verify it */
-			$this->version_arg++;
-			$this->description_arg++;
+		if ($package_path !== false) {
+			$package_path = trim($package_path,'/');
 
-			/* verify it's a valid package */
-			$path = '/'.trim($raw_folder, '/');
-
-			if (substr($path, -strlen($this->migration_folder_path)) == $this->migration_folder_path) {
-				$path = substr($path, 0, -strlen($this->migration_folder_path));
+			/* strip off the migration folder incase they added that to the end of the path */
+			if (substr($package_path, -strlen($this->migration_folder_path)) == $this->migration_folder_path) {
+				$package_path = substr($package_path, 0, -strlen($this->migration_folder_path));
 			}
 
-			if (!file_exists(ROOTPATH.$folder)) {
-				ci('console')->error('"'.$path.'" does not seem to be a valid package path.');
-			}
+			/* ok does this package path exist? */
+			if (file_exists(ROOTPATH.'/'.$package_path)) {
+				$this->create_folder(ROOTPATH.'/'.$package_path.$this->migration_folder_path);
 
-			if (!file_exists(ROOTPATH.$folder.$this->migration_folder_path)) {
-				mkdir(ROOTPATH.$folder.$this->migration_folder_path, 0777, true);
+				/* does the migration folder exist in this package? */
+				if (file_exists(ROOTPATH.'/'.$package_path.$this->migration_folder_path)) {
+					/* everything seems good that this is a package therefore let's set path to the package path */
+					$path = $package_path;
 
-				if (!file_exists(ROOTPATH.$folder.$this->migration_folder_path)) {
-					ci('console')->error('"'.$folder.$this->migration_folder_path.'" does not seem to be a valid package migration path.');
+					/* because we are in a package every command line option advances by 1 */
+					$this->version_arg++;
+					$this->description_arg++;
 				}
 			}
 		}
 
 		return $path;
-	}
-
-	protected function get_section($num, $text, $required=true)
-	{
-		/* the first useable arg is 2 */
-		$num = $num + 1;
-
-		if ($required) {
-			if (trim($this->args[$num]) == '') {
-				ci('console')->error('Please provide a '.$text.'.');
-			}
-		}
-
-		return $this->args[$num];
 	}
 
 	/**
@@ -299,9 +283,7 @@ class MigrateController extends MY_Controller
 	{
 		krsort($groups);
 
-		ci('console')
-			->error($text,false)
-			->hr();
+		ci('console')->error($text,false)->hr();
 
 		foreach ($groups as $url=>$source) {
 			ci('console')->out('/'.$url);
@@ -311,5 +293,29 @@ class MigrateController extends MY_Controller
 
 		exit(1);
 	}
+
+	protected function create_folder(string $folder,int $mode=0777) : bool
+	{
+		$success = true;
+
+		ci('console')->info('Creating folder "'.$folder.'".');
+
+		$paths = explode('/', $folder);
+
+		$dir = '';
+
+		foreach ($paths as $folder) {
+			$dir .= $folder.'/';
+
+			if (!is_dir($dir) && strlen($dir) > 0) {
+				if (!$success = mkdir($dir, $mode)) {
+					return $success;
+				}
+			}
+		}
+
+		return $success;
+	}
+
 
 } /* end class */

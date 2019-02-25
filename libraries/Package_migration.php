@@ -392,13 +392,13 @@ class Package_migration
 		}
 
 		$template = file_get_contents(__DIR__.'/Migration_template.tmpl');
-		
+
 		$php = ci('parser')->parse_string($template, ['name'=>basename($file, '.php'),'up'=>$up,'down'=>$down], true);
 
 		$written = (file_put_contents($file, $php)) ? $file : false;
 
 		if ($written) {
-			chmod($file, 0777);
+			chmod($file, 0644);
 		}
 
 		return $written;

@@ -36,6 +36,13 @@ class Console
 	protected $climate;
 
 	/**
+	 * $window_width
+	 *
+	 * @var integer
+	 */
+	protected $window_width = 0;
+
+	/**
 	 * $command_prefix
 	 *
 	 * @var string
@@ -50,6 +57,8 @@ class Console
 	public function __construct()
 	{
 		$this->climate = new \League\CLImate\CLImate;
+
+		$this->window_width =  (int)exec('tput cols');
 	}
 
 	/**
@@ -61,7 +70,9 @@ class Console
 	 */
 	public function __call($method,$arguments)
 	{
-		return call_user_func_array([$this->climate,$method], $arguments);
+		call_user_func_array([$this->climate,$method], $arguments);
+
+		return $this;
 	}
 
 	/**
@@ -108,7 +119,7 @@ class Console
 	 */
 	public function hr() : Console
 	{
-		$this->climate->border('-', (int)exec('tput cols'));
+		$this->climate->border('-',$this->window_width);
 
 		return $this;
 	}
@@ -184,7 +195,18 @@ class Console
 		return $this;
 	}
 
-	public function get_arg(int $number,bool $required = false,string $text = null,$default = null)
+	public function get_arg($named,bool $required = false,string $text = null,$default = null)
+	{
+		if (is_string($named)) {
+			return $this->get_arg_by_option($named,$required,$text,$default);
+		} elseif(is_numeric($named)) {
+			return $this->get_arg_by_position($named,$required,$text,$default);
+		} else {
+			$this->error('Please option or position number.');
+		}
+	}
+
+	public function get_arg_by_position(int $number,bool $required = false,string $text = null,$default = null)
 	{
 		/* the first useable arg is 2 */
 		$number = $number + 1;
@@ -198,6 +220,18 @@ class Console
 		}
 
 		return $arg;
+	}
+
+	public function get_arg_by_option(string $named,bool $required = false,string $text = null,$default = null)
+	{
+		foreach ($_SERVER['argv'] as $idx=>$value) {
+			if (strtolower($value) == '-'.$named) {
+				return $this->get_arg_by_position(($idx + 1),$required,$text,$default);
+			}
+		}
+
+		/* let this handle the default, required, etc... */
+		return $this->get_arg_by_position(-1,$required,$text,$default);
 	}
 
 } /* end class */

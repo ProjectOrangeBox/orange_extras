@@ -41,18 +41,18 @@ class Package_migration_cli_wrapper
 
 		if (count($found)) {
 			$highest = ci('package_migration')->get_version();
-			
+
 			foreach ($found as $num=>$value) {
 				$text = substr_replace(basename($value), ' ', 3, 1);
 
 				if ((int)$num <= $highest) {
-					$this->console->tab()->dim()->out('√ '.$text);
+					ci('console')->tab()->dim()->text('√ '.$text);
 				} else {
-					$this->console->tab()->info('> '.$text);
+					ci('console')->tab()->info('> '.$text);
 				}
 			}
 		} else {
-			$this->console->tab()->dim()->out('≈ No migrations found.');
+			ci('console')->tab()->dim()->text('≈ No migrations found.');
 		}
 	}
 
@@ -60,7 +60,7 @@ class Package_migration_cli_wrapper
 	{
 		/* look in each folder */
 		foreach ($packages as $package) {
-			$this->console->out(str_replace(ROOTPATH, '', $package));
+			ci('console')->text(str_replace(ROOTPATH, '', $package));
 		}
 	}
 
@@ -72,7 +72,7 @@ class Package_migration_cli_wrapper
 
 		ci('package_migration')->set_path($path);
 
-		$this->console->border('-', $this->window_width)->out('Migration search path switched to '.$path)->border('-', $this->window_width);
+		ci('console')->hr()->text('Migration search path switched to '.$path)->hr();
 
 		return $this;
 	}
@@ -87,18 +87,19 @@ class Package_migration_cli_wrapper
 		$filename = ci('package_migration')->create($description, $up, $down);
 
 		if ($filename) {
-			$this->console->border('-', $this->window_width)->success(str_replace(ROOTPATH, '', $filename).' created.')->border('-', $this->window_width);
+			ci('console')->hr()->text(str_replace(ROOTPATH, '', $filename).' created.')->hr();
 		}
 	}
 
 	protected function process_mixed($mixed, $error_text)
 	{
 		if ($mixed === true) {
-			$this->console->success('No migrations found.');
+			ci('console')->text('No migrations found.');
 		} elseif ($mixed === false) {
-			$this->console->error(ci('package_migration')->error_string());
+			ci('console')->error(ci('package_migration')->error_string());
 		} else {
-			$this->console->success('Version changed to '.$mixed.'.');
+			ci('console')->text('Version changed to '.$mixed.'.');
 		}
 	}
+
 } /* end class */
