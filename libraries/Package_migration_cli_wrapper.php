@@ -5,18 +5,10 @@ This provides cli output because the package_migration library doesn't
 */
 class Package_migration_cli_wrapper
 {
-	protected $console;
 	protected $package = '';
 	protected $folder = '';
-	protected $window_width;
 
 	/* https://www.codeigniter.com/user_guide/libraries/migration.html */
-
-	public function __construct()
-	{
-		$this->console = new League\CLImate\CLImate;
-		$this->window_width = (int)exec('tput cols');
-	}
 
 	public function latest()
 	{
@@ -84,9 +76,7 @@ class Package_migration_cli_wrapper
 
 	public function create($description, $up='', $down='')
 	{
-		$filename = ci('package_migration')->create($description, $up, $down);
-
-		if ($filename) {
+		if ($filename = ci('package_migration')->create($description, $up, $down)) {
 			ci('console')->hr()->text(str_replace(ROOTPATH, '', $filename).' created.')->hr();
 		}
 	}
