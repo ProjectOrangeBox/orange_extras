@@ -216,85 +216,134 @@ class MigrateController extends MY_Controller
 	 */
 	public function generate_nav_forCliAction()
 	{
-		$this->build_migration_for('/* Browser URL, Menu Text, Migration Hash */',$this->build_migrations_nav_groups(),'navigation');
-	}
+		$search_package = trim(ci('console')->get_arg(1,true,'dynamic controller url'),'/');
+
+		ci('orange_inspector_collector')->cli_end_point('/cli/Orange_inspector_cli/inspect');
+
+		foreach (orange_locator::controllers() as $name=>$record) {
+			if ($search_package == trim($record['package'],'/')) {
+				ci('orange_inspector_collector')->inspect($record['controller']);
+			}
+		}
+
+		$details = ci('orange_inspector_collector')->details();
+
+		if (count($details) == 0) {
+			ci('console')->error('No controllers found in "'.$search_package.'".');
+		}
+
+		$groups = [];
+
+		/* now for each of the controllers we need to create a migration */
+		foreach ($details as $controller_class) {
+			$single_group = [];
+
+			foreach ($controller_class['methods'] as $method) {
+				if ($method['public'] && substr($method['name'],-6) == 'Action') {
+					$pieces = preg_split('/(?=[A-Z])/',$method['name']);
+					$action = array_shift($pieces);
+
+					/* grab the http request method it would be the second if it's there */
+					$request_type = strtolower(array_shift($pieces));
+
+					if (!in_array($request_type,['post','put','delete','cli'])) {
+						$action = ($action == 'index') ? '' : $action;
+						$controller_position = strpos($controller_class['file path'],'/controllers/');
+						$url = substr($controller_class['file path'],$controller_position + 12,-14);
+						$url = str_replace('_','-','/'.strtolower(trim($url.'/'.$action,'/')));
+						$text = trim(ucwords(strtolower(str_replace(['/','_','-'], ' ', $url))), ' ');
+
+						$single_group[$url] = "ci('o_nav_model')->migration_add('".$url."','".$text."',\$this->get_hash());";
+					}
+				}
+
+				ksort($single_group);
+
+				$groups[$controller_class['name']] = $single_group;
+			}
+		}
+
+		$this->build_migration_for('/* Browser URL, Menu Text, Migration Hash */',$groups,'navigation','ci(\'o_nav_model\')->migration_remove($this->hash());');
+	} /* end function */
 
 	/**
 	 * Create Permission(s) Migration for a package
 	 */
 	public function generate_permission_forCliAction()
 	{
-		$this->build_migration_for('/* Orange URL Key, Permission Tab, Permission Text, Migration Hash */',$this->build_migrations_permission_groups(),'permission');
-	}
+		$search_package = trim(ci('console')->get_arg(1,true,'dynamic controller url'),'/');
 
-	protected function build_migration_for(string $comment,array $groups,string $file_prefix)
-	{
-		$source_for = str_replace('-', '_', trim(ci('console')->get_arg(1,true,'dynamic controller url'), '/'));
+		ci('orange_inspector_collector')->cli_end_point('/cli/Orange_inspector_cli/inspect');
 
-		if (!isset($groups[$source_for])) {
-			$this->show_migrations_available('No dynamic controller urls found at "'.$source_for.'"', $groups);
-		}
-
-		$source = $comment.PHP_EOL;
-
-		foreach ($groups[$source_for] as $s) {
-			$source .= chr(9).chr(9).$s.PHP_EOL;
-		}
-
-		$package = $this->reverse[$source_for];
-
-		ci('package_migration_cli_wrapper')->set_path($package,'/'.trim(str_replace(ROOTPATH, '', config('migration.migration_path', '/support/migrations/')), '/'))->create($file_prefix.'_'.date('Y_m_d'), $source, 'ci(\'o_nav_model\')->migration_remove($this->hash());');
-	}
-
-	protected function build_migrations_permission_groups()
-	{
-		$inspection = (new Fruit_inspector)->get_controllers_methods();
-
-		$groups = [];
-
-		foreach ($inspection as $package) {
-			foreach ($package as $controller=>$details) {
-				$controller = $details['controller'];
-				$this->reverse[trim($controller['url'], '/')] = $details['controller']['package'];
-				foreach ($details['methods'] as $method) {
-					if ($method['request_method'] != 'cli') {
-						$group = filter('human', $controller['url']);
-						$key = 'url::'.$controller['url'].'::'.$method['action'].'~'.$method['request_method'];
-						$group = filter('human', $controller['url']);
-						$description = filter('human', $controller['url'].' '.$method['action'].' '.$method['request_method']);
-
-						$groups[trim($controller['url'], '/')][] = "ci('o_permission_model')->migration_add('".$key."','".$group."','".$description."',\$this->get_hash());";
-					}
-				}
+		foreach (orange_locator::controllers() as $name=>$record) {
+			if ($search_package == trim($record['package'],'/')) {
+				ci('orange_inspector_collector')->inspect($record['controller']);
 			}
 		}
 
-		return $groups;
-	}
+		$details = ci('orange_inspector_collector')->details();
 
-	protected function build_migrations_nav_groups()
-	{
-		$inspection = (new Fruit_inspector)->get_controllers_methods();
+		if (count($details) == 0) {
+			ci('console')->error('No controllers found in "'.$search_package.'".');
+		}
 
 		$groups = [];
 
-		foreach ($inspection as $package) {
-			foreach ($package as $controller=>$details) {
-				$controller = $details['controller'];
-				$this->reverse[trim($controller['url'], '/')] = $details['controller']['package'];
-				foreach ($details['methods'] as $method) {
-					if ($method['request_method'] == 'get') {
-						$action = ($method['action'] == 'index') ? '' : $method['action'];
-						$url = str_replace('_', '-', '/'.strtolower(trim($controller['url'].'/'.$action, '/')));
-						$text = trim(ucwords(strtolower(str_replace(['/','_','-'], ' ', $url))), ' ');
+		/* now for each of the controllers we need to create a migration */
+		foreach ($details as $controller_class) {
+			$single_group = [];
 
-						$groups[trim($controller['url'], '/')][] = "ci('o_nav_model')->migration_add('".$url."','".$text."',\$this->get_hash());";
+			foreach ($controller_class['methods'] as $method) {
+				if ($method['public'] && substr($method['name'],-6) == 'Action') {
+					$pieces = preg_split('/(?=[A-Z])/',$method['name']);
+					$count_pieces = count($pieces);
+
+					if ($count_pieces == 3) {
+						/* foobarPostAction */
+						$url_piece = $pieces[0];
+						$request_type = strtolower($pieces[1]);
+						$action = $pieces[2];
+					} elseif($count_pieces == 2) {
+						/* foobarAction */
+						$url_piece = $pieces[0];
+						$request_type = 'get';
+						$action = $pieces[2];
+					} else {
+						ci('console')->error('spliting method "'.$method['name'].'" failed must have 2 or 3 sections seperated by uppercase letters.');
+					}
+
+					if (!in_array($request_type,['cli'])) {
+						$controller_position = strpos($controller_class['file path'],'/controllers/');
+						$url = substr($controller_class['file path'],$controller_position + 12,-14);
+						$group = filter('human',$url);
+						$key = strtolower('url::'.$url.'::'.$url_piece.'~'.$request_type);
+						$description = filter('human',$url.' '.$url_piece.' '.$request_type);
+
+						$single_group[] = "ci('o_permission_model')->migration_add('".$key."','".$group."','".$description."',\$this->get_hash());";
 					}
 				}
+
+				ksort($single_group);
+
+				$groups[$controller_class['name']] = $single_group;
 			}
 		}
 
-		return $groups;
+		$this->build_migration_for('/* Orange URL Key, Permission Tab, Permission Text, Migration Hash */',$groups,'permission','ci(\'o_permission_model\')->migration_remove($this->hash());');
+	}
+
+	protected function build_migration_for(string $comment,array $groups,string $file_prefix,string $down)
+	{
+		$up = $comment.PHP_EOL;
+
+		foreach ($groups as $group) {
+			foreach ($group as $s) {
+				$up .= chr(9).chr(9).$s.PHP_EOL;
+			}
+			$up .= PHP_EOL;
+		}
+
+		ci('package_migration_cli_wrapper')->create($file_prefix.'_'.date('Y_m_d'), trim($up), trim($down));
 	}
 
 	protected function show_migrations_available($text, $groups)
@@ -316,18 +365,20 @@ class MigrateController extends MY_Controller
 	{
 		$success = true;
 
-		ci('console')->info('Creating folder "'.$folder.'".');
+		if (!file_exists($folder)) {
+			ci('console')->info('Creating folder "'.$folder.'".');
 
-		$paths = explode('/', $folder);
+			$paths = explode('/', $folder);
 
-		$dir = '';
+			$dir = '';
 
-		foreach ($paths as $folder) {
-			$dir .= $folder.'/';
+			foreach ($paths as $folder) {
+				$dir .= $folder.'/';
 
-			if (!is_dir($dir) && strlen($dir) > 0) {
-				if (!$success = mkdir($dir, $mode)) {
-					return $success;
+				if (!is_dir($dir) && strlen($dir) > 0) {
+					if (!$success = mkdir($dir, $mode)) {
+						return $success;
+					}
 				}
 			}
 		}

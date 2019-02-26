@@ -28,47 +28,42 @@ class HelpController extends MY_Controller
 	 */
 	public function indexCliAction()
 	{
-		$inspection = (new Fruit_inspector)->get_controllers_methods();
+		ci('orange_inspector_collector')->cli_end_point('/cli/Orange_inspector_cli/inspect');
 
-		$output = [];
+		foreach (orange_locator::controllers() as $name=>$record) {
+			if (substr($name,0,4) == 'cli/') {
+				ci('orange_inspector_collector')->inspect($record['controller']);
+			}
+		}
 
-		foreach ($inspection as $package) {
-			foreach ($package as $controller=>$details) {
-				$controller = $details['controller'];
+		$controllers = [];
 
-				foreach ($details['methods'] as $method) {
-					if ($method['request_method'] == 'cli' && $method['parent'] != 'MY_Controller') {
-						$controller_path = substr(ltrim($controller['url'],'/'),4);
-						$action = ($method['action'] != 'index') ? '/'.$method['action'] : '';
-
-						if (strlen($method['comments'])) {
-							$lines = explode(PHP_EOL, trim($method['comments']));
-							$help = [];
-
-							foreach ($lines as $l) {
-								$clean = ltrim($l, ' */\\'.chr(9).chr(10).chr(13));
-
-								if (!empty($clean)) {
-									$help[] = $clean;
-								}
-							}
-
-							$output[$controller_path.$action] = $help;
-						}
-					}
+		foreach (ci('orange_inspector_collector')->details() as $class) {
+			foreach ($class['methods'] as $method) {
+				if (substr($method['name'],-9) == 'CliAction') {
+					$controllers[$method['class'].'::'.$method['name']] = [
+						'class'=>$method['class'],
+						'name'=>$method['name'],
+						'doc comment'=>$method['doc comment'],
+						'documentation'=>$method['documentation'],
+					];
 				}
 			}
 		}
 
-		ksort($output);
+		ksort($controllers);
 
 		ci('console')->h1('Help');
 
-		foreach ($output as $controller=>$comment) {
-			ci('console')->help_command($comment,$controller);
+		foreach ($controllers as $controller=>$record) {
+			if (!empty($record['documentation'])) {
+				$uri = strtolower(substr($record['class'],0,-10).'/'.substr($record['name'],0,-9));
+
+				ci('console')->help_command($record['documentation'],$uri);
+			}
 		}
 
-		ci('console')->br()->white('** if you have spark installed you can just type "spark '.$controller.'".');
+		ci('console')->br()->white('** if you have spark installed you can just type "spark '.$uri.'".');
 
 		ci('console')->br(2);
 	}

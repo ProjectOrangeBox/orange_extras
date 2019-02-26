@@ -1,89 +1,63 @@
 <?php
 
+/**
+ *
+ * Controller End Point
+ *
+ * public function orange_inspectCliAction()
+ * {
+ *  ci('orange_inspector')->as_json($_SERVER['argv'][2]);
+ * }
+ *
+ */
 class Orange_inspector
 {
-	protected $details = [];
 
-	protected $new_class_name;
-	protected $new_class_filepath;
-	protected $fake_class_name;
-	protected $real_class_name;
-	protected $protect = false;
-
-	public function find(string $path, string $regular_expression = '.+\.php') : Orange_inspector
+	public function as_json(string $filepath,bool $direct= true) : string
 	{
-		$directory = new RecursiveDirectoryIterator($path);
-		$it = new RecursiveIteratorIterator($directory);
-		$matches = new RegexIterator($it,'/^'.$regular_expression.'$/i',RecursiveRegexIterator::GET_MATCH);
+		$json_string = json_encode($this->reflect($filepath),JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP|JSON_UNESCAPED_UNICODE);
 
-		foreach ($matches as $filepath) {
-			$this->inspect($filepath[0]);
+		if ($direct) {
+			echo $json_string;
+			exit(1);
 		}
 
-		return $this;
+		return $json_string;
 	}
 
-	public function inspect(string $filepath) : Orange_inspector
+	public function reflect($filepath)
 	{
-		$details = $this->class($filepath);
-
-		if ($details) {
-			$this->details[$filepath] = $details;
+		if (!file_exists($filepath)) {
+			return ['error'=>true,'msg'=>'Could not locate class file "'.$filepath.'".','code'=>404];
 		}
 
-		return $this;
-	}
+		/* default to no class found */
+		$class_name = false;
 
-	public function details() : array
-	{
-		return $this->details;
-	}
+		$tokens = token_get_all(file_get_contents($filepath));
 
-	public function protect(bool $fakes) : Orange_inspector
-	{
-		$this->protect = $fakes;
-
-		return $this;
-	}
-
-	/**
-	 * protected
-	 */
-
-	protected function class($filepath) {
-		$details = false;
-
-		if ($this->protect) {
-			if ($this->make_dummy_class_file($filepath)) {
-				$details = $this->reflect($this->new_class_name);
-			} else {
-				throw new \Exception('Could not make protected class for '.$filepath.' .',500);
+		foreach ($tokens as $idx=>$token) {
+			if ($token[0] == T_CLASS) {
+				/* ok we found the first class - because good php only has 1 class per file right? */
+				$class_name = $tokens[$idx+2][1];
+				break;
 			}
-		} else {
-			require $filepath;
-
-			$class_name = $this->find_first_class_name(file_get_contents($filepath));
-
-			$details = $this->reflect($class_name[2]);
 		}
 
-		return $details;
-	}
+		/* was a class name found? */
+		if (!$class_name) {
+			return ['error'=>true,'msg'=>'Could not locate class in "'.$filepath.'".','code'=>500];
+		}
 
-	protected function reflect($class_name)
-	{
+		/* bring in the class if it's not already */
+		require_once $filepath;
+
 		/* class */
 		$reflectionClass = new ReflectionClass($class_name);
 
-		$this->real_class_name = $this->fake_class_name = $reflectionClass->getName();
-
-		/* if we are using protected "faking" then remote the prefix */
-		if ($this->protect) {
-			$this->real_class_name = substr($this->real_class_name,33);
-		}
-
-		$details['name'] = $this->real_class_name;
+		$details['name'] = $reflectionClass->getName();
 		$details['doc comment'] = $reflectionClass->getDocComment();
+		$details['documentation'] = $this->documents($reflectionClass->getDocComment());
 		$details['namespace'] = $reflectionClass->getNamespaceName();
 		$details['constants'] = $reflectionClass->getConstants();
 		$details['interfaces'] = $reflectionClass->getInterfaces();
@@ -91,6 +65,7 @@ class Orange_inspector
 		$details['traits'] = $reflectionClass->getTraitNames();
 		$details['final'] = $reflectionClass->isFinal();
 		$details['trait'] = $reflectionClass->isTrait();
+		$details['file path'] = $filepath;
 
 		/* class properties */
 		$properties = $reflectionClass->getProperties();
@@ -104,6 +79,7 @@ class Orange_inspector
 
 			$details['properties'][$property->getName()] = [
 				'doc comment'=>$property->getDocComment(),
+				'documentation'=>$this->documents($property->getDocComment()),
 				'name'=>$property->getName(),
 				'private'=>$property->isPrivate(),
 				'public'=>$property->isPublic(),
@@ -111,11 +87,11 @@ class Orange_inspector
 				'static'=>$property->isStatic(),
 				'default'=>$defaults[$property->getName()],
 				'default type'=>$default_type,
-				'class'=>$this->get_class($property->getDeclaringClass()->getName()),
+				'class'=>$property->getDeclaringClass()->getName(),
 			];
 		}
 
-		/* class methods */
+		/* loop on method classes */
 		$methods = $reflectionClass->getMethods();
 
 		foreach ($methods as $method) {
@@ -151,6 +127,7 @@ class Orange_inspector
 
 			$details['methods'][$method->name] = [
 				'doc comment'=>$method->getDocComment(),
+				'documentation'=>$this->documents($method->getDocComment()),
 				'name'=>$method->name,
 				'private'=>$method->isPrivate(),
 				'public'=>$method->isPublic(),
@@ -159,71 +136,31 @@ class Orange_inspector
 				'has return type'=>$method->hasReturnType(),
 				'return type'=>(string)$method->getReturnType(),
 				'parameters'=>$parameter_details, /* attach the parameters */
-				'class'=>$this->get_class($method->class),
+				'class'=>$method->class,
 			];
 		}
 
 		return $details;
 	}
 
-	protected function get_class(string $class) : string
+	protected function documents(string $comment) : string
 	{
-		return ($class == $this->fake_class_name) ? $this->real_class_name : $class;
-	}
+		$lines = explode(PHP_EOL,$comment);
+		$c = '';
 
-	protected function make_dummy_class_file(string $filepath) : bool
-	{
-		$success = false;
+		foreach ($lines as $line) {
+			$line = trim($line);
 
-		$source = file_get_contents($filepath);
-
-		$found = $this->find_first_class_name($source);
-
-		if (is_array($found)) {
-			$success = true;
-
-			$original_class_name = $found[2];
-
-			$this->new_class_name = 'F'.md5_file($filepath).$original_class_name;
-			$this->new_class_filepath = CACHEPATH.'/'.$this->new_class_name.'.php';
-
-			$find = implode('',$found);
-
-			$found[2] = $this->new_class_name;
-
-			$replace = implode('',$found);
-
-			$source = str_replace($find,$replace,$source);
-
-			/* dump fake class */
-			file_put_contents($this->new_class_filepath,$source);
-
-			/* include the fake class */
-			require $this->new_class_filepath;
-
-			/* remove fake file */
-			unlink($this->new_class_filepath);
-		}
-
-		return $success;
-	}
-
-	protected function find_first_class_name(string $source)
-	{
-		$tokens = token_get_all($source);
-
-		foreach ($tokens as $idx=>$token) {
-			if ($token[0] == T_CLASS) {
-				return [
-					$tokens[$idx][1],
-					$tokens[$idx+1][1],
-					$tokens[$idx+2][1],
-					$tokens[$idx+3][1],
-				];
+			if (substr($line,0,3) == '/**') {
+				/* do nothing */
+			} elseif(substr($line,0,2) == '*/') {
+				/* do nothing */
+			} elseif(substr($line,0,2) == '* ') {
+				$c .= trim(substr($line,2)).PHP_EOL;
 			}
 		}
 
-		return false;
+		return trim($c);
 	}
 
 } /* end class */
