@@ -45,6 +45,27 @@ class Migration_helperController extends MY_Controller
 	protected $package_path = '';
 
 	/**
+	 * Current package path
+	 *
+	 * @var string
+	 */
+	protected $up_source = [];
+
+	/**
+	 * Current package path
+	 *
+	 * @var string
+	 */
+	protected $down_source = [];
+
+	/**
+	 * Current package path
+	 *
+	 * @var string
+	 */
+	protected $in_loop = false;
+
+	/**
 	 * show help
 	 */
 	public function helpCliAction()
@@ -64,7 +85,7 @@ class Migration_helperController extends MY_Controller
 	 *
 	 * @access public
 	 *
-	 * @param 
+	 * @param
 	 *
 	 * @throws
 	 * @return void
@@ -91,7 +112,7 @@ class Migration_helperController extends MY_Controller
 	 *
 	 * @access public
 	 *
-	 * @param 
+	 * @param
 	 *
 	 * @throws
 	 * @return void
@@ -112,14 +133,30 @@ class Migration_helperController extends MY_Controller
 			'create_config_copy_in'=>'Create Configuration Copy Migration',
 			'create_rw_folder_in'=>'Create Read / Write Folder Migration',
 			'create_symlink_in'=>'Create Public Symlink Migration',
-			'create_table_in'=>'Create Table Migration',		
+			'create_table_in'=>'Create Table Migration',
 		];
-		
-		$action = $this->get_radioboxes('What would you like to do?',$actions,'a');
-		
-		$action .= 'Cliaction';
-		
-		$this->$action();
+
+		$this->validate_package();
+
+		$this->in_loop = true;
+
+		while ($this->in_loop) {
+			$action = $this->get_radioboxes('What would you like to do?',$actions,'a');
+
+			$action .= 'Cliaction';
+
+			$this->$action();
+
+			$input = ci('console')->hr()->input('Add another option?');
+			$input->accept(['y','n']);
+			$response = $input->prompt();
+
+			if ($response == 'n') {
+				$this->in_loop = false;
+			}
+		}
+
+		$this->write_file('Migration','default');
 	}
 
 	public function create_empty_inCliaction() : void
@@ -128,7 +165,7 @@ class Migration_helperController extends MY_Controller
 
 		$description = $this->get_input('Please provide a simple migration description?');
 
-		ci('package_migration_cli_wrapper')->create($description,'','','Migration_empty_template');
+		$this->write_file($description,'empty');
 	}
 
 	/**
@@ -137,7 +174,7 @@ class Migration_helperController extends MY_Controller
 	 *
 	 * @access public
 	 *
-	 * @param 
+	 * @param
 	 *
 	 * @throws
 	 * @return void
@@ -171,17 +208,14 @@ class Migration_helperController extends MY_Controller
 			$table_schema[$record['Table']] = $record['Create Table'];
 		}
 
-		$up = '';
-		$down = '';
-
 		foreach ($table_schema as $tablename=>$schema) {
 			$schema = str_replace('"','\"',$schema);
 
-			$up .= chr(9).chr(9).'ci()->db->query("'.$schema.'");'.PHP_EOL.PHP_EOL;
-			$down .= chr(9).chr(9)."ci()->db->query('DROP TABLE `$tablename`;');".PHP_EOL.PHP_EOL;
+			$this->up_source[] = 'ci()->db->query("'.$schema.'");';
+			$this->down_source[] = "ci()->db->query('DROP TABLE `$tablename`;');";
 		}
 
-		ci('package_migration_cli_wrapper')->create('create_table_'.date('Y_m_d'), trim($up), trim($down),'Migration_table_template');
+		$this->write_file('create_table','table');
 	}
 
 	/**
@@ -190,7 +224,7 @@ class Migration_helperController extends MY_Controller
 	 *
 	 * @access public
 	 *
-	 * @param 
+	 * @param
 	 *
 	 * @throws
 	 * @return void
@@ -221,18 +255,15 @@ class Migration_helperController extends MY_Controller
 
 		$response = $this->get_checkboxes('Please select each folder your would like a symlink migration created for:',$folders);
 
-		$up = '';
-		$down = '';
-
 		foreach ($response as $path) {
 			$public_position = strpos($path,'/public/');
 			$www_path = substr($path,$public_position + 7);
 
-			$up .= chr(9).chr(9)."\$this->_link_public('$www_path');".PHP_EOL;
-			$down .= chr(9).chr(9)."\$this->_unlink_public('$www_path');".PHP_EOL;
+			$this->up_source[] = "\$this->_link_public('$www_path');";
+			$this->down_source[] = "\$this->_unlink_public('$www_path');";
 		}
 
-		ci('package_migration_cli_wrapper')->create('create_public_symlink_'.date('Y_m_d'), trim($up), trim($down),'Migration_symlink_template');
+		$this->write_file('create_public_symlink','symlink');
 	}
 
 	/**
@@ -241,7 +272,7 @@ class Migration_helperController extends MY_Controller
 	 *
 	 * @access public
 	 *
-	 * @param 
+	 * @param
 	 *
 	 * @throws
 	 * @return void
@@ -259,10 +290,10 @@ class Migration_helperController extends MY_Controller
 
 		$response = '/'.trim($response,'/');
 
-		$up = chr(9).chr(9)."\$this->_add_rw_folder('$response');";
-		$down = chr(9).chr(9)."\$this->_remove_rw_folder('$response');";
+		$this->up_source[] = "\$this->_add_rw_folder('$response');";
+		$this->down_source[] = "\$this->_remove_rw_folder('$response');";
 
-		ci('package_migration_cli_wrapper')->create('add_readwrite_'.date('Y_m_d'), trim($up), trim($down),'Migration_rw_folder_template');
+		$this->write_file('add_readwrite','rw_folder');
 	}
 
 	/**
@@ -271,7 +302,7 @@ class Migration_helperController extends MY_Controller
 	 *
 	 * @access public
 	 *
-	 * @param 
+	 * @param
 	 *
 	 * @throws
 	 * @return void
@@ -297,17 +328,14 @@ class Migration_helperController extends MY_Controller
 
 		$response = $this->get_checkboxes('Please select each configuration file your would to copy:',$files);
 
-		$up = '';
-		$down = '';
-
 		foreach ($response as $path) {
 			$filename = basename($path);
 
-			$up .= chr(9).chr(9)."\$this->_copy_config('support/config/$filename');".PHP_EOL;
-			$down .= chr(9).chr(9)."\$this->_unlink_config('support/config/$filename');".PHP_EOL;
+			$this->up_source[] = "\$this->_copy_config('support/config/$filename');";
+			$this->down_source[] = "\$this->_unlink_config('support/config/$filename');";
 		}
 
-		ci('package_migration_cli_wrapper')->create('copy_config_'.date('Y_m_d'), trim($up), trim($down),'Migration_copy_config_template');
+		$this->write_file('copy_config','copy_config');
 	}
 
 	/**
@@ -316,7 +344,7 @@ class Migration_helperController extends MY_Controller
 	 *
 	 * @access public
 	 *
-	 * @param 
+	 * @param
 	 *
 	 * @throws
 	 * @return void
@@ -330,13 +358,13 @@ class Migration_helperController extends MY_Controller
 	{
 		$this->validate_package();
 
-		$role_name = $this->get_input('What would you like the role name to be?','r');
-		$role_description = $this->get_input('What would you like the role description to be?','d');
+		$role_name = $this->get_input('What would you like the role NAME to be?','r');
+		$role_description = $this->get_input('What would you like the role DESCRIPTION to be?','d');
 
-		$up = chr(9).chr(9)."ci('o_role_model')->migration_add('$role_name', '$role_description', \$this->hash());";
-		$down = chr(9).chr(9)."ci('o_role_model')->migration_remove(\$this->hash());";
+		$this->up_source[] = "ci('o_role_model')->migration_add('$role_name', '$role_description', \$this->hash());";
+		$this->down_source[] = "ci('o_role_model')->migration_remove(\$this->hash());";
 
-		ci('package_migration_cli_wrapper')->create('add_role_'.date('Y_m_d'), trim($up), trim($down),'Migration_role_template');
+		$this->write_file('add_role','role');
 	}
 
 	/**
@@ -345,7 +373,7 @@ class Migration_helperController extends MY_Controller
 	 *
 	 * @access public
 	 *
-	 * @param 
+	 * @param
 	 *
 	 * @throws
 	 * @return void
@@ -377,8 +405,6 @@ class Migration_helperController extends MY_Controller
 
 		/* now for each of the controllers we need to create a migration */
 		foreach ($details as $controller_class) {
-			$single_group = [];
-
 			foreach ($controller_class['methods'] as $method) {
 				if ($method['public'] && substr($method['name'],-6) == 'Action') {
 					$pieces = preg_split('/(?=[A-Z])/',$method['name']);
@@ -394,38 +420,40 @@ class Migration_helperController extends MY_Controller
 						$url = str_replace('_','-','/'.strtolower(trim($url.'/'.$action,'/')));
 						$text = trim(ucwords(strtolower(str_replace(['/','_','-'], ' ', $url))), ' ');
 
-						$single_group[$url] = "ci('o_nav_model')->migration_add('".$url."','".$text."',\$this->hash());";
+						$groups[$url] = "ci('o_nav_model')->migration_add('".$url."','".$text."',\$this->hash());";
 					}
 				}
-
-				ksort($single_group);
-
-				$groups[$controller_class['name']] = $single_group;
 			}
 		}
 
-		$up = '';
+		ksort($groups);
 
-		foreach ($groups as $group) {
-			foreach ($group as $s) {
-				$up .= chr(9).chr(9).$s.PHP_EOL;
-			}
+		/* build display and determine the array key you want */
+		$display_array = [];
 
-			$up .= PHP_EOL;
+		foreach ($groups as $k=>$g) {
+			$display_array[$k] = $k;
 		}
 
-		$down = "ci('o_nav_model')->migration_remove(\$this->hash());";
+		$selected = $this->get_checkboxes('Select the URLs you would like to create migrations for:',$display_array,'-u');
 
-		ci('package_migration_cli_wrapper')->create('nav_'.date('Y_m_d'), trim($up), trim($down),'Migration_nav_template');
-	} /* end function */
+		$up_source_group = array_intersect_key($groups,array_combine($selected,$selected));
 
+		foreach ($up_source_group as $up) {
+			$this->up_source[] = $up;
+		}
+
+		$this->down_source[] = "ci('o_nav_model')->migration_remove(\$this->hash());";
+
+		$this->write_file('nav','nav');
+	}
 	/**
 	 *
 	 * Description Here
 	 *
 	 * @access public
 	 *
-	 * @param 
+	 * @param
 	 *
 	 * @throws
 	 * @return void
@@ -457,8 +485,6 @@ class Migration_helperController extends MY_Controller
 
 		/* now for each of the controllers we need to create a migration */
 		foreach ($details as $controller_class) {
-			$single_group = [];
-
 			foreach ($controller_class['methods'] as $method) {
 				if ($method['public'] && substr($method['name'],-6) == 'Action') {
 					$pieces = preg_split('/(?=[A-Z])/',$method['name']);
@@ -485,29 +511,21 @@ class Migration_helperController extends MY_Controller
 						$key = strtolower('url::'.$url.'::'.$url_piece.'~'.$request_type);
 						$description = filter('human',$url.' '.$url_piece.' '.$request_type);
 
-						$single_group[] = "ci('o_permission_model')->migration_add('".$key."','".$group."','".$description."',\$this->hash());";
+						$groups[] = "ci('o_permission_model')->migration_add('".$key."','".$group."','".$description."',\$this->hash());";
 					}
 				}
-
-				ksort($single_group);
-
-				$groups[$controller_class['name']] = $single_group;
 			}
 		}
 
-		$up = '';
+		ksort($groups);
 
-		foreach ($groups as $group) {
-			foreach ($group as $s) {
-				$up .= chr(9).chr(9).$s.PHP_EOL;
-			}
-
-			$up .= PHP_EOL;
+		foreach ($groups as $up) {
+			$this->up_source[] = $up;
 		}
 
-		$down = "ci('o_permission_model')->migration_remove(\$this->hash());";
+		$this->down_source[] = "ci('o_permission_model')->migration_remove(\$this->hash());";
 
-		ci('package_migration_cli_wrapper')->create('permission_'.date('Y_m_d'), trim($up), trim($down),'Migration_permission_template');
+		$this->write_file('permission','permission');
 	}
 
 	/**
@@ -516,7 +534,7 @@ class Migration_helperController extends MY_Controller
 	 *
 	 * @access public
 	 *
-	 * @param 
+	 * @param
 	 *
 	 * @throws
 	 * @return void
@@ -548,12 +566,11 @@ class Migration_helperController extends MY_Controller
 
 		$selected_records = $this->get_checkboxes('Please select the settings your would like to build a migration for:',$group_items);
 
-		$up = '';
-		$down = "ci('o_setting_model')->migration_remove(\$this->hash());";
+		$this->down_source[] = "ci('o_setting_model')->migration_remove(\$this->hash());";
 
 		foreach ($selected_records as $primary_id) {
 			$id = substr($primary_id,3);
-			
+
 			$row = $db->get_where('orange_settings',['id'=>$id])->row_array();
 
 			$name = str_replace("'","\'",$row['name']);
@@ -562,10 +579,48 @@ class Migration_helperController extends MY_Controller
 			$help = str_replace(["'",chr(10),chr(13)],["\'",'',''],$row['help']);
 			$options = str_replace(["'",chr(10),chr(13)],["\'",'',''],$row['options']);
 
-			$up .= chr(9).chr(9)."ci('o_setting_model')->migration_add('$name', '$group', '$value', '$help', '$options', \$this->hash());".PHP_EOL;
+			$this->up_source[] = "ci('o_setting_model')->migration_add('$name', '$group', '$value', '$help', '$options', \$this->hash());";
 		}
 
-		ci('package_migration_cli_wrapper')->create('settings_'.$selected_group.'_'.date('Y_m_d'), trim($up), trim($down),'Migration_settings_template');
+		$this->write_file('settings_'.$selected_group,'settings');
+	}
+
+	/**
+	 *
+	 * Description Here
+	 *
+	 * @access protected
+	 *
+	 * @param string $filename
+	 * @param string $template
+	 *
+	 * @throws
+	 * @return void
+	 *
+	 * #### Example
+	 * ```php
+	 *
+	 * ```
+	 */
+	protected function write_file(string $filename,string $template) : void
+	{
+		if (!$this->in_loop) {
+			$up = '';
+
+			foreach ($this->up_source as $s) {
+				$up .= chr(9).chr(9).$s.PHP_EOL;
+			}
+
+			$down = '';
+
+			foreach ($this->down_source as $s) {
+				$down .= chr(9).chr(9).$s.PHP_EOL;
+			}
+
+			ci('package_migration_cli_wrapper')->create($filename.'_'.date('Y_m_d'), trim($up), trim($down),'Migration_'.$template.'_template');
+
+			exit(1);
+		}
 	}
 
 	/**
@@ -579,7 +634,7 @@ class Migration_helperController extends MY_Controller
 	 * @param string $option i
 	 *
 	 * @throws
-	 * @return 
+	 * @return
 	 *
 	 * #### Example
 	 * ```php
@@ -605,7 +660,7 @@ class Migration_helperController extends MY_Controller
 		if (empty($responds)) {
 			ci('console')->error('Nothing entered.');
 		}
-		
+
 		return $responds;
 	}
 
@@ -621,7 +676,7 @@ class Migration_helperController extends MY_Controller
 	 * @param string $option c
 	 *
 	 * @throws
-	 * @return 
+	 * @return
 	 *
 	 * #### Example
 	 * ```php
@@ -647,7 +702,7 @@ class Migration_helperController extends MY_Controller
 
 		if (count($options) == 1) {
 			$responds = [];
-			
+
 			$responds[] = key($options);
 
 			return;
@@ -660,7 +715,7 @@ class Migration_helperController extends MY_Controller
 		if (!count($responds)) {
 			ci('console')->error('Nothing selected.');
 		}
-		
+
 		return $responds;
 	}
 
@@ -676,7 +731,7 @@ class Migration_helperController extends MY_Controller
 	 * @param string $option r
 	 *
 	 * @throws
-	 * @return 
+	 * @return
 	 *
 	 * #### Example
 	 * ```php
@@ -715,7 +770,7 @@ class Migration_helperController extends MY_Controller
 		if (empty($responds)) {
 			ci('console')->error('Nothing selected.');
 		}
-		
+
 		return $responds;
 	}
 
@@ -725,7 +780,7 @@ class Migration_helperController extends MY_Controller
 	 *
 	 * @access protected
 	 *
-	 * @param 
+	 * @param
 	 *
 	 * @throws
 	 * @return void
@@ -737,18 +792,20 @@ class Migration_helperController extends MY_Controller
 	 */
 	protected function validate_package() : Migration_helperController
 	{
-		$selected_package_path = $this->get_radioboxes('Select the package you would like to create a migration for:',get_packages(null,null,true),'p');
+		if (empty($this->package_path)) {
+			$selected_package_path = $this->get_radioboxes('Select the package you would like to create a migration for:',get_packages(null,null,true),'p');
 
-		$this->package_path = str_replace(ROOTPATH.'/','',$selected_package_path);
+			$this->package_path = str_replace(ROOTPATH.'/','',$selected_package_path);
 
-		$migration_path = '/'.trim(str_replace(ROOTPATH, '', config('migration.migration_path', '/support/migrations/')), '/');
+			$migration_path = '/'.trim(str_replace(ROOTPATH, '', config('migration.migration_path', '/support/migrations/')), '/');
 
-		/* create folder if it doesn't exist */
-		ci('package_migration_cli_wrapper')->create_folder(ROOTPATH.'/'.$this->package_path.$migration_path);
+			/* create folder if it doesn't exist */
+			ci('package_migration_cli_wrapper')->create_folder(ROOTPATH.'/'.$this->package_path.$migration_path);
 
-		/* switch package migration to work in this folder */
-		ci('package_migration')->set_path('/'.$this->package_path.$migration_path);
-		
+			/* switch package migration to work in this folder */
+			ci('package_migration')->set_path('/'.$this->package_path.$migration_path);
+		}
+
 		return $this;
 	}
 
