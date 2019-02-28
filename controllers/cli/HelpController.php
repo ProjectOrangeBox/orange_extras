@@ -28,44 +28,40 @@ class HelpController extends MY_Controller
 	 */
 	public function indexCliAction()
 	{
-		ci('orange_inspector_collector')->cli_end_point('/cli/Orange_inspector_cli/inspect');
+		$packages = get_packages(null,null,true);
+		
+		foreach ($packages as $package) {
+			$cli_folder = $package.'/controllers/cli';
+			
+			if (file_exists($cli_folder)) {
+				$matches = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($cli_folder,FilesystemIterator::SKIP_DOTS));
 
-		foreach (orange_locator::controllers() as $name=>$record) {
-			if (substr($name,0,4) == 'cli/') {
-				ci('orange_inspector_collector')->inspect($record['controller']);
-			}
-		}
-
-		$controllers = [];
-
-		foreach (ci('orange_inspector_collector')->details() as $class) {
-			foreach ($class['methods'] as $method) {
-				if (substr($method['name'],-9) == 'CliAction') {
-					$controllers[$method['class'].'::'.$method['name']] = [
-						'class'=>$method['class'],
-						'name'=>$method['name'],
-						'doc comment'=>$method['doc comment'],
-						'documentation'=>$method['documentation'],
-					];
+				foreach ($matches as $match) {
+					$pathname = $match->getPathname();
+				
+					$controller_position = strpos($pathname,'/controllers/');
+					$url = strtolower(substr($pathname,$controller_position + 13,-14));
+					
+					ci('console')->br()->h2('Controller: cli/'.substr($url,4))->br();
+					
+					$exit = $this->shell('php '.ROOTPATH.'/public/index.php '.$url.'/help',$stdout,$stderr);
+					
+					echo $stdout;
 				}
 			}
 		}
 
-		ksort($controllers);
-
-		ci('console')->h1('Help');
-
-		foreach ($controllers as $controller=>$record) {
-			if (!empty($record['documentation'])) {
-				$uri = strtolower(substr($record['class'],0,-10).'/'.substr($record['name'],0,-9));
-
-				ci('console')->help_command($record['documentation'],$uri);
-			}
-		}
-
 		ci('console')->br()->white('** if you have spark installed you can just type "spark '.$uri.'".');
+	}
 
-		ci('console')->br(2);
+	public function helpCliAction()
+	{
+		ci('console')->help([
+			['Show every cli controllers help.'=>'help'],
+			['Display this help.'=>'help/help'],
+			['Test add database connections'=>'help/test-databases'],
+			['Show details about .env files.'=>'help/env'],
+		],false);
 	}
 
 	/**
@@ -136,4 +132,18 @@ class HelpController extends MY_Controller
 
 		ci('console')->br(2);
 	}
+
+	protected function shell($cmd, &$stdout=null, &$stderr=null) {
+		$cols = (int)exec('tput cols');
+	
+		$proc = proc_open($cmd,[1=>['pipe','w'],	2=>['pipe','w']],$pipes,null,['CLICOLOR'=>1,'TERM'=>'xterm','TERM_PROGRAM'=>'Hyper','TERM_COLUMNS'=>$cols]);
+	
+		$stdout = stream_get_contents($pipes[1]);
+		fclose($pipes[1]);
+	
+		$stderr = stream_get_contents($pipes[2]);
+		fclose($pipes[2]);
+	
+		return proc_close($proc);
+	}	
 } /* end class */

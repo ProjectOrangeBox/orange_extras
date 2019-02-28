@@ -27,10 +27,10 @@ class CreateController extends MY_Controller
 
 	public function helpCliAction()
 	{
-		ci('console')
-			->h1('Help')
-			->help_command(['Create a Package.','package folder path & url must be included.'],'create/package foldername/package_name /admin/details')
-			->br(2);
+		ci('console')->help([
+			['Create a Package.'],
+			['package folder path & url must be included.'=>'create/package foldername/package_name /admin/details'],
+		]);
 	}
 
 	/**
@@ -112,4 +112,5 @@ class CreateController extends MY_Controller
 			@chmod($path, 0775);
 		}
 	}
-}
+
+} /* end class */

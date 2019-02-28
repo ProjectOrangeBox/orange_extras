@@ -155,6 +155,8 @@ class Orange_inspector
 				/* do nothing */
 			} elseif(substr($line,0,2) == '*/') {
 				/* do nothing */
+			} elseif(substr($line,0,3) == '* @') {
+				/* do nothing */
 			} elseif(substr($line,0,2) == '* ') {
 				$c .= trim(substr($line,2)).PHP_EOL;
 			}

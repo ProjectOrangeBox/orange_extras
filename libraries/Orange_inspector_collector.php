@@ -18,14 +18,8 @@ class Orange_inspector_collector {
 
 	public function find_in_packages(string $regular_expression = '.+\.php') : Orange_inspector_collector
 	{
-		$autoload = [];
-
-		include ROOTPATH.'/application/config/autoload.php';
-
 		/* add application folder */
-		$autoload['packages'][] = ROOTPATH.'/application';
-
-		foreach ($autoload['packages'] as $path) {
+		foreach (get_packages('app',null,true) as $path) {
 			$this->find_in($path,$regular_expression);
 		}
 

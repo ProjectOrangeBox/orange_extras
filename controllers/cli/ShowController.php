@@ -27,20 +27,18 @@ class ShowController extends MY_Controller
 
 	public function helpCliAction() : void
 	{
-		ci('console')
-			->h1('Help')
-			->help_command('Display this help.',['show','show/help'])
-			->help_command('Show all registered package paths.','show/packages')
-			->help_command('Show all registered pear plugins.','show/pear')
-			->help_command('Show all registered validations.','show/validate')
-			->help_command('Show all registered filters.','show/filter')
-			->help_command('Show all registered models.','show/models')
-			->help_command('Show all registered controllers.','show/controllers')
-			->help_command('Show all registered controller traits.','show/controller-traits')
-			->help_command('Show all registered middleware.','show/middleware')
-			->h2('* -p suffix will show the files path.')
-			->h2('* -d suffix will show the files details.')
-			->br(2);
+		ci('console')->help([
+			['Show all registered package paths.'=>'show/packages'],
+			['Show all registered pear plugins.'=>'show/pear'],
+			['Show all registered validations.'=>'show/validate'],
+			['Show all registered filters.'=>'show/filter'],
+			['Show all registered models.'=>'show/models'],
+			['Show all registered controllers.'=>'show/controllers'],
+			['Show all registered controller traits.'=>'show/controller-traits'],
+			['Show all registered middleware.'=>'show/middleware'],
+			['* -p suffix will show the files path.'],
+			['* -d suffix will show the files details.'],
+		]);
 	}
 
 	/**
@@ -48,14 +46,10 @@ class ShowController extends MY_Controller
 	 */
 	public function packagesCliAction($arg='') : void
 	{
-		$autoload = load_config('autoload', 'autoload');
-
-		$this->search_paths = explode(PATH_SEPARATOR, rtrim(APPPATH, '/').PATH_SEPARATOR.implode(PATH_SEPARATOR, $autoload['packages']));
-
 		ci('console')->h1('Registered Packages');
 
-		foreach ($this->search_paths as $path) {
-			ci('console')->out($path);
+		foreach (get_packages(null,'app') as $path) {
+			ci('console')->out(str_replace(ROOTPATH,'',$path));
 		}
 
 		ci('console')->br();

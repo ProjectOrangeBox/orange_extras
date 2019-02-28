@@ -2,17 +2,21 @@
 
 /* {name}.php */
 
-class Migration_{name} extends Migration_base {
+class Migration_{name} extends Migration_base
+{
 
-	public function up() {
+	public function up()
+	{
 		echo $this->migration('up');
 
+		/* Browser URL, Menu Text, Migration Hash */
 		{up}
 
 		return true;
 	}
 
-	public function down() {
+	public function down()
+	{
 		echo $this->migration('down');
 
 		{down}

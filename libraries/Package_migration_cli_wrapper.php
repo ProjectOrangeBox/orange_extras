@@ -1,7 +1,7 @@
 <?php
 
 /*
-This provides cli output because the package_migration library doesn't
+This provides cli OUTPUT because the package_migration library doesn't
 */
 class Package_migration_cli_wrapper
 {
@@ -64,7 +64,7 @@ class Package_migration_cli_wrapper
 
 		ci('package_migration')->set_path($path);
 
-		ci('console')->hr()->text('Migration search path switched to '.$path)->hr();
+		ci('console')->hr()->text('Migration path switched to '.$path)->hr();
 
 		return $this;
 	}
@@ -74,9 +74,9 @@ class Package_migration_cli_wrapper
 		return $this->package.$this->folder;
 	}
 
-	public function create($description, $up='', $down='')
+	public function create(string $description, string $up, string $down, string $template)
 	{
-		if ($filename = ci('package_migration')->create($description, $up, $down)) {
+		if ($filename = ci('package_migration')->create($description, $up, $down, $template)) {
 			ci('console')->hr()->text(str_replace(ROOTPATH, '', $filename).' created.')->hr();
 		}
 	}
@@ -90,6 +90,31 @@ class Package_migration_cli_wrapper
 		} else {
 			ci('console')->text('Version changed to '.$mixed.'.');
 		}
+	}
+
+	public function create_folder(string $folder,int $mode=0777) : bool
+	{
+		$success = true;
+
+		if (!file_exists($folder)) {
+			ci('console')->info('Creating folder "'.$folder.'".');
+
+			$paths = explode('/', $folder);
+
+			$dir = '';
+
+			foreach ($paths as $folder) {
+				$dir .= $folder.'/';
+
+				if (!is_dir($dir) && strlen($dir) > 0) {
+					if (!$success = mkdir($dir, $mode)) {
+						return $success;
+					}
+				}
+			}
+		}
+
+		return $success;
 	}
 
 } /* end class */

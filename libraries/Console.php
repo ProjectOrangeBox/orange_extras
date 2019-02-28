@@ -58,7 +58,11 @@ class Console
 	{
 		$this->climate = new \League\CLImate\CLImate;
 
-		$this->window_width =  (int)exec('tput cols');
+		if (isset($_SERVER['TERM_COLUMNS'])) {
+			$this->window_width = (int)$_SERVER['TERM_COLUMNS'];
+		} else {
+			$this->window_width = (int)exec('tput cols');
+		}
 	}
 
 	/**
@@ -70,8 +74,36 @@ class Console
 	 */
 	public function __call($method,$arguments)
 	{
-		call_user_func_array([$this->climate,$method], $arguments);
+		$climate_responds = call_user_func_array([$this->climate,$method], $arguments);
 
+		return (in_array($method,['checkboxes','radio','password','input','confirm'])) ? $climate_responds : $this;
+	}
+
+	public function help(array $help, bool $self_help = true) : Console
+	{
+		$this->h1('Help');
+		
+		if ($self_help) {
+			$bt = debug_backtrace(false,2);
+			
+			$filename = substr(strtolower(basename($bt[0]['file'],'.php')),0,-10);
+			
+			$this->help_command('Display this help.',[$filename,$filename.'/help']);
+		}
+		
+		foreach ($help as $text_command) {
+			$text = key($text_command);
+			$command = array_shift($text_command);
+
+			if (is_numeric($text)) {
+				$this->climate->info($command);
+			} else {
+				$this->help_command($text,$command);
+			}
+		}
+			
+		$this->br()->white('** if you have spark installed you can just type "spark controller/method...".')->br();
+		
 		return $this;
 	}
 
@@ -85,11 +117,15 @@ class Console
 	public function help_command($help,$command) : Console
 	{
 		foreach ((array)$help as $txt) {
-			$this->climate->info($txt);
+			if (!empty($txt)) {
+				$this->climate->info($txt);
+			}
 		}
 
 		foreach ((array)$command as $txt) {
-			ci('console')->command($txt);
+			if (!empty($txt)) {
+				ci('console')->command($txt);
+			}
 		}
 
 		$this->hr();

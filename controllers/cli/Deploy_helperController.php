@@ -28,13 +28,12 @@ class Deploy_helperController extends MY_Controller
 	 */
 	public function helpCliAction()
 	{
-		ci('console')
-			->h1('Help')
-			->help_command('Generate gitx status deploy.json syntax for all loaded packages','deploy_helper/gitx_status')
-			->help_command('Generate gitx update deploy.json syntax for all loaded packages','deploy_helper/gitx_update')
-			->help_command('Generate gitx checkout deploy.json syntax for all loaded packages','deploy_helper/gitx_checkout')
-			->help_command('Generate migrate up deploy.json syntax for all loaded packages','deploy_helper/migrate_up')
-			->br(2);
+		ci('console')->help([
+			['Generate gitx status deploy.json syntax for all loaded packages'=>'deploy_helper/gitx_status'],
+			['Generate gitx update deploy.json syntax for all loaded packages'=>'deploy_helper/gitx_update'],
+			['Generate gitx checkout deploy.json syntax for all loaded packages'=>'deploy_helper/gitx_checkout'],
+			['Generate migrate up deploy.json syntax for all loaded packages'=>'deploy_helper/migrate_up'],
+		]);
 	}
 
 	public function gitx_statusCliAction()
@@ -74,17 +73,9 @@ class Deploy_helperController extends MY_Controller
 
 	protected function inspect($callback)
 	{
-		$autoload = load_config('autoload', 'autoload');
-		$packages = $autoload['packages'];
-
-		/* this adds root application folder */
-		$packages = array_merge([''], $packages);
-
-		sort($packages);
-
 		ci('console')->h1('Deploy Syntax - copy and paste as needed.');
 
-		foreach ($packages as $idx=>$package) {
+		foreach (get_packages('root',null,true) as $idx=>$package) {
 			$callback('/'.trim(str_replace(ROOTPATH, '', $package), '/'),$package);
 		}
 	}
