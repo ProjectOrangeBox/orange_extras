@@ -71,11 +71,47 @@ class Migration_helperController extends MY_Controller
 	public function helpCliAction()
 	{
 		ci('console')->help([
-			['Show all of the packages'=>'migration_helper/show-packages'],
-			['Create an empty migration file in the packages migration folder.'=>'migration-helper/create_in /packages/misc/orange_snippets'],
-			['Auto create a settings migration for select settings.'=>'migration-helper/create_in /packages/misc/orange_snippets'],
-			['Auto create a navigation migration for the provided package.'=>'migrate/create_nav_for /packages/misc/orange_snippets'],
-			['Auto create a permission migration for the provided package.'=>'migrate/create_permission_for /packages/misc/orange_snippets'],
+			['Show all of the registered packages'=>'%%/show-packages'],
+
+			['Dynamically create migration'=>'%%/create'],
+
+			['Create a empty migration in a given package'],
+			['-p Package Path'],
+			['-d Description'=>'%%/create-empty-in'],
+
+			['Create a table schema migration in a given package'],
+			['-p Package Path'],
+			['-d Database Connection [default]'],
+			['-t Table'=>'%%/create_table_in'],
+
+			['Create a public symlink migration in a given package'],
+			['-p Package Path'],
+			['-f Folder Path'=>'%%/create_symlink_in'],
+
+			['Create a read / write folder in var migration in a given package'],
+			['-p Package Path'],
+			['-f Folder'=>'%%/create_rw_folder_in'],
+
+			['Create a config file copy migration in a given package'],
+			['-p Package Path'],
+			['-f Folder'=>'%%/create_config_copy_in'],
+
+			['Create a role migration in a given package'],
+			['-p Package Path'],
+			['-r Role Name'],
+			['-d Role Description'=>'%%/create_role_in'],
+
+			['Create a navigation menu migration in a given package'],
+			['-p Package Path'],
+			['-u URL'=>'%%/create_nav_in'],
+
+			['Create a permission migration in a given package'],
+			['-p Package Path'=>'%%/create_permission_in'],
+
+			['Create a settings migration in a given package'],
+			['-p Package Path'],
+			['-g Settings Group'],
+			['-n Settings Name in Group'=>'%%/copy_settings_in'],
 		]);
 	}
 
@@ -136,7 +172,7 @@ class Migration_helperController extends MY_Controller
 			'create_table_in'=>'Create Table Migration',
 		];
 
-		$this->validate_package();
+		$this->capture_package();
 
 		$this->in_loop = true;
 
@@ -159,11 +195,27 @@ class Migration_helperController extends MY_Controller
 		$this->write_file('Migration','default');
 	}
 
+	/**
+	 *
+	 * Description Here
+	 *
+	 * @access public
+	 *
+	 * @param
+	 *
+	 * @throws
+	 * @return void
+	 *
+	 * #### Example
+	 * ```php
+	 *
+	 * ```
+	 */
 	public function create_empty_inCliaction() : void
 	{
-		$this->validate_package();
+		$this->capture_package();
 
-		$description = $this->get_input('Please provide a simple migration description?');
+		$description = ci('console')->get_input('Please provide a simple migration description?','d');
 
 		$this->write_file($description,'empty');
 	}
@@ -186,15 +238,15 @@ class Migration_helperController extends MY_Controller
 	 */
 	public function create_table_inCliAction() : void
 	{
-		$this->validate_package();
+		$this->capture_package();
 
-		$database_config = ci('console')->get_arg(2,false,'Database Connection','default');
+		$database_config = ci('console')->get_arg(2,false,'Database Connection','default','d');
 
 		$db = ci()->load->database($database_config, true);
 
 		$tables = $db->list_tables();
 
-		$response = $this->get_checkboxes('Please select each table you would like a migration for:',$tables);
+		$response = ci('console')->get_checkboxes('Please select each table you would like a migration for:',$tables,'t');
 
 		foreach ($response as $table) {
 			/**
@@ -236,7 +288,7 @@ class Migration_helperController extends MY_Controller
 	 */
 	public function create_symlink_inCliAction() : void
 	{
-		$this->validate_package();
+		$this->capture_package();
 
 		if (!file_exists(ROOTPATH.'/'.$this->package_path.'/public')) {
 			ci('console')->error('There is no public folder in "'.$this->package_path.'".');
@@ -253,7 +305,7 @@ class Migration_helperController extends MY_Controller
 			}
 		}
 
-		$response = $this->get_checkboxes('Please select each folder your would like a symlink migration created for:',$folders);
+		$response = ci('console')->get_checkboxes('Please select each folder your would like a symlink migration created for:',$folders,'f');
 
 		foreach ($response as $path) {
 			$public_position = strpos($path,'/public/');
@@ -284,9 +336,9 @@ class Migration_helperController extends MY_Controller
 	 */
 	public function create_rw_folder_inCliAction() : void
 	{
-		$this->validate_package();
+		$this->capture_package();
 
-		$response = $this->get_input('What would you like the folder name to be?');
+		$response = ci('console')->get_input('What would you like the folder name to be?','f');
 
 		$response = '/'.trim($response,'/');
 
@@ -314,7 +366,7 @@ class Migration_helperController extends MY_Controller
 	 */
 	public function create_config_copy_inCliAction() : void
 	{
-		$this->validate_package();
+		$this->capture_package();
 
 		if (!file_exists(ROOTPATH.'/'.$this->package_path.'/config')) {
 			ci('console')->error('No configuration folder found at "'.$this->package_path.'/config".');
@@ -326,7 +378,7 @@ class Migration_helperController extends MY_Controller
 			ci('console')->error('No configuration files found in "'.$this->package_path.'/config".');
 		}
 
-		$response = $this->get_checkboxes('Please select each configuration file your would to copy:',$files);
+		$response = ci('console')->get_checkboxes('Please select each configuration file your would to copy:',$files,'f');
 
 		foreach ($response as $path) {
 			$filename = basename($path);
@@ -356,10 +408,10 @@ class Migration_helperController extends MY_Controller
 	 */
 	public function create_role_inCliAction() : void
 	{
-		$this->validate_package();
+		$this->capture_package();
 
-		$role_name = $this->get_input('What would you like the role NAME to be?','r');
-		$role_description = $this->get_input('What would you like the role DESCRIPTION to be?','d');
+		$role_name = ci('console')->get_input('What would you like the role NAME to be?','r');
+		$role_description = ci('console')->get_input('What would you like the role DESCRIPTION to be?','d');
 
 		$this->up_source[] = "ci('o_role_model')->migration_add('$role_name', '$role_description', \$this->hash());";
 		$this->down_source[] = "ci('o_role_model')->migration_remove(\$this->hash());";
@@ -385,7 +437,7 @@ class Migration_helperController extends MY_Controller
 	 */
 	public function create_nav_inCliAction() : void
 	{
-		$this->validate_package();
+		$this->capture_package();
 
 		ci('orange_inspector_collector')->cli_end_point('/cli/Orange_inspector_cli/inspect');
 
@@ -435,7 +487,7 @@ class Migration_helperController extends MY_Controller
 			$display_array[$k] = $k;
 		}
 
-		$selected = $this->get_checkboxes('Select the URLs you would like to create migrations for:',$display_array,'-u');
+		$selected = ci('console')->get_checkboxes('Select the URLs you would like to create migrations for:',$display_array,'u');
 
 		$up_source_group = array_intersect_key($groups,array_combine($selected,$selected));
 
@@ -465,7 +517,7 @@ class Migration_helperController extends MY_Controller
 	 */
 	public function create_permission_inCliAction() : void
 	{
-		$this->validate_package();
+		$this->capture_package();
 
 		ci('orange_inspector_collector')->cli_end_point('/cli/Orange_inspector_cli/inspect');
 
@@ -546,7 +598,7 @@ class Migration_helperController extends MY_Controller
 	 */
 	public function copy_settings_inCliAction() : void
 	{
-		$this->validate_package();
+		$this->capture_package();
 
 		$db = ci()->load->database('default', true);
 
@@ -556,22 +608,20 @@ class Migration_helperController extends MY_Controller
 			$groups[$row['group']] = $row['group'];
 		}
 
-		$selected_group = $this->get_radioboxes('Please select a group you wish to export settings from:',$groups);
+		$selected_group = ci('console')->get_radioboxes('Please select a group you wish to export settings from:',$groups,'g');
 
 		$query = $db->get_where('orange_settings',['group'=>$selected_group]);
 
 		foreach ($query->result_array() as $row) {
-			$group_items['row'.$row['id']] = $row['name'];
+			$group_items[$row['name']] = $row['name'];
 		}
 
-		$selected_records = $this->get_checkboxes('Please select the settings your would like to build a migration for:',$group_items);
+		$selected_records = ci('console')->get_checkboxes('Please select the settings your would like to build a migration for:',$group_items,'n');
 
 		$this->down_source[] = "ci('o_setting_model')->migration_remove(\$this->hash());";
 
-		foreach ($selected_records as $primary_id) {
-			$id = substr($primary_id,3);
-
-			$row = $db->get_where('orange_settings',['id'=>$id])->row_array();
+		foreach ($selected_records as $name) {
+			$row = $db->get_where('orange_settings',['group'=>$selected_group,'name'=>$name])->row_array();
 
 			$name = str_replace("'","\'",$row['name']);
 			$group = str_replace("'","\'",$row['group']);
@@ -629,157 +679,6 @@ class Migration_helperController extends MY_Controller
 	 *
 	 * @access protected
 	 *
-	 * @param string $text
-	 * @param $responds
-	 * @param string $option i
-	 *
-	 * @throws
-	 * @return
-	 *
-	 * #### Example
-	 * ```php
-	 *
-	 * ```
-	 */
-	protected function get_input(string $text,string $option = 'i')
-	{
-		/* did they include the option with -? */
-		foreach ($_SERVER['argv'] as $idx=>$arg) {
-			if ($arg == '-'.$option) {
-				if (isset($_SERVER['argv'][$idx+1])) {
-					return $_SERVER['argv'][$idx+1];
-				}
-			}
-		}
-
-		/* else ask */
-		$input = ci('console')->br()->input('<green>'.$text.'</green>');
-
-		$responds = trim($input->prompt());
-
-		if (empty($responds)) {
-			ci('console')->error('Nothing entered.');
-		}
-
-		return $responds;
-	}
-
-	/**
-	 *
-	 * Description Here
-	 *
-	 * @access protected
-	 *
-	 * @param string $text
-	 * @param array $options
-	 * @param $responds
-	 * @param string $option c
-	 *
-	 * @throws
-	 * @return
-	 *
-	 * #### Example
-	 * ```php
-	 *
-	 * ```
-	 */
-	protected function get_checkboxes(string $text,array $options,string $option = 'c')
-	{
-		/* did they include the option with -i? */
-		foreach ($_SERVER['argv'] as $idx=>$arg) {
-			if ($arg == '-'.$option) {
-				if (isset($_SERVER['argv'][$idx+1])) {
-					return explode(',',$_SERVER['argv'][$idx+1]);
-				}
-			}
-		}
-
-		/* else ask */
-
-		if (!count($options)) {
-			ci('console')->error('Nothing options provided.');
-		}
-
-		if (count($options) == 1) {
-			$responds = [];
-
-			$responds[] = key($options);
-
-			return;
-		}
-
-		$input = ci('console')->br()->checkboxes($text,$options);
-
-		$responds = $input->prompt();
-
-		if (!count($responds)) {
-			ci('console')->error('Nothing selected.');
-		}
-
-		return $responds;
-	}
-
-	/**
-	 *
-	 * Description Here
-	 *
-	 * @access protected
-	 *
-	 * @param string $text
-	 * @param array $options
-	 * @param $responds
-	 * @param string $option r
-	 *
-	 * @throws
-	 * @return
-	 *
-	 * #### Example
-	 * ```php
-	 *
-	 * ```
-	 */
-	protected function get_radioboxes(string $text,array $options, string $option = 'r')
-	{
-		/* did they include the option with -i? */
-		foreach ($_SERVER['argv'] as $idx=>$arg) {
-			if ($arg == '-'.$option) {
-				if (isset($_SERVER['argv'][$idx+1])) {
-					return $_SERVER['argv'][$idx+1];
-				}
-			}
-		}
-
-		/* else ask */
-
-		if (!count($options)) {
-			ci('console')->error('Nothing options provided.');
-		}
-
-		if (count($options) == 1) {
-			$responds = [];
-
-			$responds[] = key($options);
-
-			return;
-		}
-
-		$input = ci('console')->br()->radio('<green>'.$text.'</green>',$options);
-
-		$responds = $input->prompt();
-
-		if (empty($responds)) {
-			ci('console')->error('Nothing selected.');
-		}
-
-		return $responds;
-	}
-
-	/**
-	 *
-	 * Description Here
-	 *
-	 * @access protected
-	 *
 	 * @param
 	 *
 	 * @throws
@@ -790,12 +689,12 @@ class Migration_helperController extends MY_Controller
 	 *
 	 * ```
 	 */
-	protected function validate_package() : Migration_helperController
+	protected function capture_package() : Migration_helperController
 	{
 		if (empty($this->package_path)) {
-			$selected_package_path = $this->get_radioboxes('Select the package you would like to create a migration for:',get_packages(null,null,true),'p');
+			$selected_package_path = ci('console')->get_radioboxes('Select the package you would like to create a migration for:',get_packages(null,null,true),'p');
 
-			$this->package_path = str_replace(ROOTPATH.'/','',$selected_package_path);
+			$this->package_path = trim(str_replace(ROOTPATH.'/','',$selected_package_path),'/');
 
 			$migration_path = '/'.trim(str_replace(ROOTPATH, '', config('migration.migration_path', '/support/migrations/')), '/');
 

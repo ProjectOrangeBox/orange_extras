@@ -29,29 +29,31 @@ class HelpController extends MY_Controller
 	public function indexCliAction()
 	{
 		$packages = get_packages(null,null,true);
-		
+
 		foreach ($packages as $package) {
 			$cli_folder = $package.'/controllers/cli';
-			
+
 			if (file_exists($cli_folder)) {
 				$matches = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($cli_folder,FilesystemIterator::SKIP_DOTS));
 
 				foreach ($matches as $match) {
 					$pathname = $match->getPathname();
-				
+
 					$controller_position = strpos($pathname,'/controllers/');
 					$url = strtolower(substr($pathname,$controller_position + 13,-14));
-					
+
 					ci('console')->br()->h2('Controller: cli/'.substr($url,4))->br();
-					
+
 					$exit = $this->shell('php '.ROOTPATH.'/public/index.php '.$url.'/help',$stdout,$stderr);
-					
-					echo $stdout;
+
+					if (substr(strtolower(trim($stdout)),0,5) != 'error') {
+						echo $stdout;
+					} else {
+						ci('console')->out('<red>Controller URL CLI end point has no help method.</red>');
+					}
 				}
 			}
 		}
-
-		ci('console')->br()->white('** if you have spark installed you can just type "spark '.$uri.'".');
 	}
 
 	public function helpCliAction()
@@ -135,15 +137,15 @@ class HelpController extends MY_Controller
 
 	protected function shell($cmd, &$stdout=null, &$stderr=null) {
 		$cols = (int)exec('tput cols');
-	
+
 		$proc = proc_open($cmd,[1=>['pipe','w'],	2=>['pipe','w']],$pipes,null,['CLICOLOR'=>1,'TERM'=>'xterm','TERM_PROGRAM'=>'Hyper','TERM_COLUMNS'=>$cols]);
-	
+
 		$stdout = stream_get_contents($pipes[1]);
 		fclose($pipes[1]);
-	
+
 		$stderr = stream_get_contents($pipes[2]);
 		fclose($pipes[2]);
-	
+
 		return proc_close($proc);
-	}	
+	}
 } /* end class */

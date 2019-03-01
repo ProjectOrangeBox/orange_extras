@@ -50,12 +50,29 @@ class Console
 	protected $command_prefix = '/cli/';
 
 	/**
+	 * $command_prefix
+	 *
+	 * @var string
+	 */
+	protected $args = [];
+
+	/**
+	 * $command_prefix
+	 *
+	 * @var string
+	 */
+	protected $argc = 0;
+
+	/**
 	 * __construct
 	 *
 	 * @return void
 	 */
 	public function __construct()
 	{
+		$this->args = $_SERVER['argv'];
+		$this->argc = $_SERVER['argc'];
+
 		$this->climate = new \League\CLImate\CLImate;
 
 		if (isset($_SERVER['TERM_COLUMNS'])) {
@@ -79,32 +96,64 @@ class Console
 		return (in_array($method,['checkboxes','radio','password','input','confirm'])) ? $climate_responds : $this;
 	}
 
+	/**
+	 * help_command
+	 *
+	 * @param mixed $help
+	 * @param mixed $command
+	 * @return void
+	 */
 	public function help(array $help, bool $self_help = true) : Console
 	{
 		$this->h1('Help');
-		
+
 		if ($self_help) {
 			$bt = debug_backtrace(false,2);
-			
-			$filename = substr(strtolower(basename($bt[0]['file'],'.php')),0,-10);
-			
-			$this->help_command('Display this help.',[$filename,$filename.'/help']);
+
+			$controller = str_replace('_','-',strtolower(substr($bt[0]['file'],strpos($bt[0]['file'],'/controllers/') + 17,-14)));
+
+			$this->help_command('Display this help.',[$controller,$controller.'/help']);
 		}
-		
+
 		foreach ($help as $text_command) {
 			$text = key($text_command);
 			$command = array_shift($text_command);
 
 			if (is_numeric($text)) {
-				$this->climate->info($command);
+				$this->climate->info($this->format_for_options($command));
 			} else {
+
+
 				$this->help_command($text,$command);
 			}
 		}
-			
+
 		$this->br()->white('** if you have spark installed you can just type "spark controller/method...".')->br();
-		
+
 		return $this;
+	}
+
+	protected function format_for_controller(string $string) : string
+	{
+		$bt = debug_backtrace(false,2);
+
+		$controller = str_replace('_','-',strtolower(substr($bt[1]['file'],strpos($bt[1]['file'],'/controllers/') + 17,-14)));
+
+		return str_replace('%%',$controller,$string);
+	}
+
+	protected function format_for_options(string $string) : string
+	{
+		if (substr($string,0,1) == '-') {
+			if (substr($string,-1) == ']') {
+				$left_bracket_start = strrpos($string,'[');
+				$string = substr($string,0,$left_bracket_start).'<yellow>'.substr($string,$left_bracket_start).'</yellow>';
+			}
+
+			$string = '<blue>'.substr($string,0,2).'</blue> <light_blue>'.substr($string,2).'</light_blue>';
+		}
+
+		return $string;
 	}
 
 	/**
@@ -118,13 +167,17 @@ class Console
 	{
 		foreach ((array)$help as $txt) {
 			if (!empty($txt)) {
+				$txt = $this->format_for_options($txt);
+
 				$this->climate->info($txt);
 			}
 		}
 
 		foreach ((array)$command as $txt) {
 			if (!empty($txt)) {
-				ci('console')->command($txt);
+				$txt = $this->format_for_controller($txt);
+
+				$this->command($txt);
 			}
 		}
 
@@ -192,7 +245,7 @@ class Console
 	 * @param string $txt
 	 * @return void
 	 */
-	public function command(string $txt)
+	public function command(string $txt) : Console
 	{
 		$this->climate->yellow()->tab()->out($this->command_prefix.$txt);
 
@@ -231,36 +284,109 @@ class Console
 		return $this;
 	}
 
-	public function get_arg($named,bool $required = false,string $text = null,$default = null)
+	/**
+	 *
+	 * Description Here
+	 *
+	 * @access protected
+	 *
+	 * @param string $text
+	 * @param $responds
+	 * @param string $option i
+	 *
+	 * @throws
+	 * @return
+	 *
+	 * #### Example
+	 * ```php
+	 *
+	 * ```
+	 */
+	public function get_arg($named,bool $required = false,string $text = null,$default = null,$option_string='a')
 	{
+		/**
+		 * Warning Multiple Exists
+		 */
+
+		/* first type by option string because if that's there then we are done. */
+		$value = $this->get_arg_by_option($option_string,false,'','%%not-found%%');
+
+		if ($value != '%%not-found%%') {
+			/* exit 1 */
+			return $value;
+		}
+
 		if (is_string($named)) {
+			/* exit 2 */
 			return $this->get_arg_by_option($named,$required,$text,$default);
 		} elseif(is_numeric($named)) {
-			return $this->get_arg_by_position($named,$required,$text,$default);
+			/* exit 3 */
+			return $this->get_arg_by_position($named,$required,$text,$default,$option_string);
 		} else {
+			/* full stop */
 			$this->error('Please option or position number.');
 		}
 	}
 
-	public function get_arg_by_position(int $number,bool $required = false,string $text = null,$default = null)
+	/**
+	 *
+	 * Description Here
+	 *
+	 * @access protected
+	 *
+	 * @param string $text
+	 * @param $responds
+	 * @param string $option i
+	 *
+	 * @throws
+	 * @return
+	 *
+	 * #### Example
+	 * ```php
+	 *
+	 * ```
+	 */
+	public function get_arg_by_position(int $number,bool $required = false,string $text = null,$default = null,string $option_string='a')
 	{
 		/* the first useable arg is 2 */
 		$number = $number + 1;
 
-		$arg = (!isset($_SERVER['argv'][$number])) ? $default : $_SERVER['argv'][$number];
+		$arg = (!isset($this->args[$number])) ? $default : $this->args[$number];
 
 		if ($required && empty($arg)) {
 			$err = ($text) ? 'a '.$text.' (argument '.($number - 1).')' : 'argument '.($number - 1);
 
-			ci('console')->br()->error('Please provide '.$err.'.');
+			$this->br()->error('Please provide '.$err.'.');
 		}
 
 		return $arg;
 	}
 
+	/**
+	 *
+	 * Description Here
+	 *
+	 * @access protected
+	 *
+	 * @param string $text
+	 * @param $responds
+	 * @param string $option i
+	 *
+	 * @throws
+	 * @return
+	 *
+	 * #### Example
+	 * ```php
+	 *
+	 * ```
+	 */
 	public function get_arg_by_option(string $named,bool $required = false,string $text = null,$default = null)
 	{
-		foreach ($_SERVER['argv'] as $idx=>$value) {
+		/**
+		 * Warning Multiple Exists
+		 */
+
+		foreach ($this->args as $idx=>$value) {
 			if (strtolower($value) == '-'.$named) {
 				return $this->get_arg_by_position(($idx + 1),$required,$text,$default);
 			}
@@ -268,6 +394,171 @@ class Console
 
 		/* let this handle the default, required, etc... */
 		return $this->get_arg_by_position(-1,$required,$text,$default);
+	}
+
+	/**
+	 *
+	 * Description Here
+	 *
+	 * @access protected
+	 *
+	 * @param string $text
+	 * @param $responds
+	 * @param string $option i
+	 *
+	 * @throws
+	 * @return
+	 *
+	 * #### Example
+	 * ```php
+	 *
+	 * ```
+	 */
+	public function get_input(string $text,string $option) : string
+	{
+		/**
+		 * Warning Multiple Exists
+		 */
+
+		/* did they include the option with -? */
+		foreach ($this->args as $idx=>$arg) {
+			if ($arg == '-'.$option) {
+				if (isset($this->args[$idx+1])) {
+					return $this->args[$idx+1];
+				}
+			}
+		}
+
+		$this->br();
+
+		/* else ask */
+		$input = $this->climate->input('<green>'.$text.'</green>');
+
+		$responds = trim($input->prompt());
+
+		if (empty($responds)) {
+			$this->error('Nothing entered.');
+		}
+
+		return $responds;
+	}
+
+	/**
+	 *
+	 * Description Here
+	 *
+	 * @access protected
+	 *
+	 * @param string $text
+	 * @param array $options
+	 * @param $responds
+	 * @param string $option c
+	 *
+	 * @throws
+	 * @return
+	 *
+	 * #### Example
+	 * ```php
+	 *
+	 * ```
+	 */
+	public function get_checkboxes(string $text,array $options,string $option) : array
+	{
+		/**
+		 * Warning Multiple Exists
+		 */
+
+		/* did they include the option with -i? */
+		foreach ($this->args as $idx=>$arg) {
+			if ($arg == '-'.$option) {
+				if (isset($this->args[$idx+1])) {
+					return explode(',',$this->args[$idx+1]);
+				}
+			}
+		}
+
+		/* else ask */
+
+		if (!count($options)) {
+			$this->error('Nothing options provided.');
+		}
+
+		if (count($options) == 1) {
+			$responds = [];
+
+			$responds[] = key($options);
+
+			return $responds;
+		}
+
+		$this->br();
+
+		$input = $this->climate->checkboxes($text,$options);
+
+		$responds = $input->prompt();
+
+		if (!count($responds)) {
+			$this->error('Nothing selected.');
+		}
+
+		return $responds;
+	}
+
+	/**
+	 *
+	 * Description Here
+	 *
+	 * @access protected
+	 *
+	 * @param string $text
+	 * @param array $options
+	 * @param $responds
+	 * @param string $option r
+	 *
+	 * @throws
+	 * @return
+	 *
+	 * #### Example
+	 * ```php
+	 *
+	 * ```
+	 */
+	public function get_radioboxes(string $text,array $options, string $option) : string
+	{
+		/**
+		 * Warning Multiple Exists
+		 */
+
+		/* did they include the option with -i? */
+		foreach ($this->args as $idx=>$arg) {
+			if ($arg == '-'.$option) {
+				if (isset($this->args[$idx+1])) {
+					return $this->args[$idx+1];
+				}
+			}
+		}
+
+		/* else ask */
+
+		if (!count($options)) {
+			$this->error('Nothing options provided.');
+		}
+
+		if (count($options) == 1) {
+			return key($options);
+		}
+
+		$this->br();
+
+		$input =  $this->climate->radio('<green>'.$text.'</green>',$options);
+
+		$responds = $input->prompt();
+
+		if (empty($responds)) {
+			$this->error('Nothing selected.');
+		}
+
+		return $responds;
 	}
 
 } /* end class */
