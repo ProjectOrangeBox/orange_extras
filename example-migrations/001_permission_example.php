@@ -1,6 +1,6 @@
 <?php
 
-class Migration_001_permission_example extends Migration_base
+class Migration_001_permission_example extends \Migration_base
 {
 
 	/* example up function */

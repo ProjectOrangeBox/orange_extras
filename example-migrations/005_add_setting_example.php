@@ -1,6 +1,6 @@
 <?php
 
-class Migration_005_add_setting_example extends Migration_base
+class Migration_005_add_setting_example extends \Migration_base
 {
 
 	/* example up function */

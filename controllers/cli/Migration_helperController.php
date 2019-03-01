@@ -35,7 +35,7 @@
  *
  *
  */
-class Migration_helperController extends MY_Controller
+class Migration_helperController extends \MY_Controller
 {
 	/**
 	 * Current package path

@@ -21,7 +21,7 @@
  *
  */
 
-class CreateController extends MY_Controller
+class CreateController extends \MY_Controller
 {
 	protected $package_folder;
 

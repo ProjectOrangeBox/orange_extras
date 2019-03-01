@@ -1,6 +1,6 @@
 <?php
 
-class Migration_003_read_write_example extends Migration_base
+class Migration_003_read_write_example extends \Migration_base
 {
 
 	/* example up function */

@@ -21,7 +21,7 @@
  *
  */
 
-class HelpController extends MY_Controller
+class HelpController extends \MY_Controller
 {
 	/**
 	 * Show all of the available Command Line Functions

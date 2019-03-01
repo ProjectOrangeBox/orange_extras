@@ -1,6 +1,6 @@
 <?php
 
-class Migration_002_symlink_example extends Migration_base
+class Migration_002_symlink_example extends \Migration_base
 {
 
 	/* example up function */

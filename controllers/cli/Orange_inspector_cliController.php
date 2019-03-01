@@ -1,6 +1,6 @@
 <?php
 
-class Orange_inspector_cliController extends MY_Controller
+class Orange_inspector_cliController extends \MY_Controller
 {
 	public function helpCliAction() : void
 	{

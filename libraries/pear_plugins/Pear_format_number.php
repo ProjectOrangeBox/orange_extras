@@ -11,7 +11,7 @@
  * @help Pear::format_numbers('1234567890', '(000) 000-0000') (123) 456-7890
  * @help Pear::format_numbers('1234567890', '000.000.0000') 123.456.7890
  */
-class Pear_format_number extends Pear_plugin
+class Pear_format_number extends \Pear_plugin
 {
 	public function render($string=null, $format=null)
 	{

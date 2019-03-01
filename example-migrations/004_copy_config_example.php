@@ -1,6 +1,6 @@
 <?php
 
-class Migration_004_copy_config_example extends Migration_base
+class Migration_004_copy_config_example extends \Migration_base
 {
 
 	/* example up function */

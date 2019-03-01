@@ -21,7 +21,7 @@
  *
  */
 
-class FindController extends MY_Controller
+class FindController extends \MY_Controller
 {
 	public function helpCliAction() : void
 	{

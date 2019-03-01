@@ -13,7 +13,7 @@
  * @help Pear::mask_string('1234567812345678', '**** - **** - **** - 0000', ' -') **** - **** - **** - 5678
  *
  */
-class Pear_mask_string extends Pear_plugin
+class Pear_mask_string extends \Pear_plugin
 {
 	public function render($string=null, $format=null, $ignore=' ')
 	{

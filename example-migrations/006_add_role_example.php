@@ -1,6 +1,6 @@
 <?php
 
-class Migration_006_add_role_example extends Migration_base
+class Migration_006_add_role_example extends \Migration_base
 {
 
 	/* example up function */

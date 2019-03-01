@@ -21,7 +21,7 @@
  *
  */
 
-class ShowController extends MY_Controller
+class ShowController extends \MY_Controller
 {
 	protected $docblock_regx = '/(?s)(\/\*(?:(?!\*\/).)+\*\/)\s+/';
 

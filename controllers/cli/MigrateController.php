@@ -35,7 +35,7 @@
  *
  *
  */
-class MigrateController extends MY_Controller
+class MigrateController extends \MY_Controller
 {
 	/**
 	 * Store the configuration key which contains the current version number

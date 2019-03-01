@@ -9,7 +9,7 @@
  * @license http://opensource.org/licenses/MIT MIT License
  * @link	https://github.com/ProjectOrangeBox
  */
-class Pear_size_to_bytes extends Pear_plugin
+class Pear_size_to_bytes extends \Pear_plugin
 {
 	public function render($format=null)
 	{

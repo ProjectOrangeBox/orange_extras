@@ -1,6 +1,6 @@
 <?php
 
-class Migration_008_create_table_example extends Migration_base
+class Migration_008_create_table_example extends \Migration_base
 {
 
 	/* example up function */

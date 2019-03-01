@@ -1,6 +1,6 @@
 <?php
 
-class Migration_007_add_nav_example extends Migration_base
+class Migration_007_add_nav_example extends \Migration_base
 {
 
 	/* example up function */
