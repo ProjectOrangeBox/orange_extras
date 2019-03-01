@@ -92,7 +92,7 @@ class Package_migration_cli_wrapper
 		}
 	}
 
-	public function create_folder(string $folder,int $mode=0777) : bool
+	public function create_folder(string $folder, int $mode=0777) : bool
 	{
 		$success = true;
 
@@ -116,5 +116,4 @@ class Package_migration_cli_wrapper
 
 		return $success;
 	}
-
 } /* end class */

@@ -68,7 +68,7 @@ class Migration_helperController extends MY_Controller
 	/**
 	 * show help
 	 */
-	public function helpCliAction()
+	public function helpCliAction() : void
 	{
 		ci('console')->help([
 			['Show all of the registered packages'=>'%%/show-packages'],
@@ -135,8 +135,8 @@ class Migration_helperController extends MY_Controller
 	{
 		ci('console')->h1('Registered Packages');
 
-		foreach (get_packages(null,'app') as $path) {
-			ci('console')->out(str_replace(ROOTPATH,'',$path));
+		foreach (get_packages(null, 'app') as $path) {
+			ci('console')->out(str_replace(ROOTPATH, '', $path));
 		}
 
 		ci('console')->br();
@@ -177,7 +177,7 @@ class Migration_helperController extends MY_Controller
 		$this->in_loop = true;
 
 		while ($this->in_loop) {
-			$action = $this->get_radioboxes('What would you like to do?',$actions,'a');
+			$action = $this->get_radioboxes('What would you like to do?', $actions, 'a');
 
 			$action .= 'Cliaction';
 
@@ -192,7 +192,7 @@ class Migration_helperController extends MY_Controller
 			}
 		}
 
-		$this->write_file('Migration','default');
+		$this->write_file('Migration', 'default');
 	}
 
 	/**
@@ -215,9 +215,9 @@ class Migration_helperController extends MY_Controller
 	{
 		$this->capture_package();
 
-		$description = ci('console')->get_input('Please provide a simple migration description?','d');
+		$description = ci('console')->get_input('Please provide a simple migration description?', 'd');
 
-		$this->write_file($description,'empty');
+		$this->write_file($description, 'empty');
 	}
 
 	/**
@@ -240,13 +240,13 @@ class Migration_helperController extends MY_Controller
 	{
 		$this->capture_package();
 
-		$database_config = ci('console')->get_arg(2,false,'Database Connection','default','d');
+		$database_config = ci('console')->get_arg(2, false, 'Database Connection', 'default', 'd');
 
 		$db = ci()->load->database($database_config, true);
 
 		$tables = $db->list_tables();
 
-		$response = ci('console')->get_checkboxes('Please select each table you would like a migration for:',$tables,'t');
+		$response = ci('console')->get_checkboxes('Please select each table you would like a migration for:', $tables, 't');
 
 		foreach ($response as $table) {
 			/**
@@ -255,19 +255,19 @@ class Migration_helperController extends MY_Controller
 			$record = $db->query('SHOW CREATE TABLE `'.$table.'`')->row_array();
 
 			/* strip auto increment */
-			$record['Create Table'] = preg_replace('/AUTO_INCREMENT=(\d+)/m','', $record['Create Table']);
+			$record['Create Table'] = preg_replace('/AUTO_INCREMENT=(\d+)/m', '', $record['Create Table']);
 
 			$table_schema[$record['Table']] = $record['Create Table'];
 		}
 
 		foreach ($table_schema as $tablename=>$schema) {
-			$schema = str_replace('"','\"',$schema);
+			$schema = str_replace('"', '\"', $schema);
 
 			$this->up_source[] = 'ci()->db->query("'.$schema.'");';
 			$this->down_source[] = "ci()->db->query('DROP TABLE `$tablename`;');";
 		}
 
-		$this->write_file('create_table','table');
+		$this->write_file('create_table', 'table');
 	}
 
 	/**
@@ -294,8 +294,8 @@ class Migration_helperController extends MY_Controller
 			ci('console')->error('There is no public folder in "'.$this->package_path.'".');
 		}
 
-		$directory = new RecursiveDirectoryIterator(ROOTPATH.'/'.$this->package_path.'/public',FilesystemIterator::SKIP_DOTS);
-		$files = new RecursiveIteratorIterator($directory,RecursiveIteratorIterator::SELF_FIRST);
+		$directory = new RecursiveDirectoryIterator(ROOTPATH.'/'.$this->package_path.'/public', FilesystemIterator::SKIP_DOTS);
+		$files = new RecursiveIteratorIterator($directory, RecursiveIteratorIterator::SELF_FIRST);
 
 		$folders = [];
 
@@ -305,17 +305,17 @@ class Migration_helperController extends MY_Controller
 			}
 		}
 
-		$response = ci('console')->get_checkboxes('Please select each folder your would like a symlink migration created for:',$folders,'f');
+		$response = ci('console')->get_checkboxes('Please select each folder your would like a symlink migration created for:', $folders, 'f');
 
 		foreach ($response as $path) {
-			$public_position = strpos($path,'/public/');
-			$www_path = substr($path,$public_position + 7);
+			$public_position = strpos($path, '/public/');
+			$www_path = substr($path, $public_position + 7);
 
 			$this->up_source[] = "\$this->_link_public('$www_path');";
 			$this->down_source[] = "\$this->_unlink_public('$www_path');";
 		}
 
-		$this->write_file('create_public_symlink','symlink');
+		$this->write_file('create_public_symlink', 'symlink');
 	}
 
 	/**
@@ -338,14 +338,14 @@ class Migration_helperController extends MY_Controller
 	{
 		$this->capture_package();
 
-		$response = ci('console')->get_input('What would you like the folder name to be?','f');
+		$response = ci('console')->get_input('What would you like the folder name to be?', 'f');
 
-		$response = '/'.trim($response,'/');
+		$response = '/'.trim($response, '/');
 
 		$this->up_source[] = "\$this->_add_rw_folder('$response');";
 		$this->down_source[] = "\$this->_remove_rw_folder('$response');";
 
-		$this->write_file('add_readwrite','rw_folder');
+		$this->write_file('add_readwrite', 'rw_folder');
 	}
 
 	/**
@@ -378,7 +378,7 @@ class Migration_helperController extends MY_Controller
 			ci('console')->error('No configuration files found in "'.$this->package_path.'/config".');
 		}
 
-		$response = ci('console')->get_checkboxes('Please select each configuration file your would to copy:',$files,'f');
+		$response = ci('console')->get_checkboxes('Please select each configuration file your would to copy:', $files, 'f');
 
 		foreach ($response as $path) {
 			$filename = basename($path);
@@ -387,7 +387,7 @@ class Migration_helperController extends MY_Controller
 			$this->down_source[] = "\$this->_unlink_config('support/config/$filename');";
 		}
 
-		$this->write_file('copy_config','copy_config');
+		$this->write_file('copy_config', 'copy_config');
 	}
 
 	/**
@@ -410,13 +410,13 @@ class Migration_helperController extends MY_Controller
 	{
 		$this->capture_package();
 
-		$role_name = ci('console')->get_input('What would you like the role NAME to be?','r');
-		$role_description = ci('console')->get_input('What would you like the role DESCRIPTION to be?','d');
+		$role_name = ci('console')->get_input('What would you like the role NAME to be?', 'r');
+		$role_description = ci('console')->get_input('What would you like the role DESCRIPTION to be?', 'd');
 
 		$this->up_source[] = "ci('o_role_model')->migration_add('$role_name', '$role_description', \$this->hash());";
 		$this->down_source[] = "ci('o_role_model')->migration_remove(\$this->hash());";
 
-		$this->write_file('add_role','role');
+		$this->write_file('add_role', 'role');
 	}
 
 	/**
@@ -442,7 +442,7 @@ class Migration_helperController extends MY_Controller
 		ci('orange_inspector_collector')->cli_end_point('/cli/Orange_inspector_cli/inspect');
 
 		foreach (orange_locator::controllers() as $name=>$record) {
-			if ($this->package_path == trim($record['package'],'/')) {
+			if ($this->package_path == trim($record['package'], '/')) {
 				ci('orange_inspector_collector')->inspect($record['controller']);
 			}
 		}
@@ -458,18 +458,18 @@ class Migration_helperController extends MY_Controller
 		/* now for each of the controllers we need to create a migration */
 		foreach ($details as $controller_class) {
 			foreach ($controller_class['methods'] as $method) {
-				if ($method['public'] && substr($method['name'],-6) == 'Action') {
-					$pieces = preg_split('/(?=[A-Z])/',$method['name']);
+				if ($method['public'] && substr($method['name'], -6) == 'Action') {
+					$pieces = preg_split('/(?=[A-Z])/', $method['name']);
 					$action = array_shift($pieces);
 
 					/* grab the http request method it would be the second if it's there */
 					$request_type = strtolower(array_shift($pieces));
 
-					if (!in_array($request_type,['post','put','delete','cli'])) {
+					if (!in_array($request_type, ['post','put','delete','cli'])) {
 						$action = ($action == 'index') ? '' : $action;
-						$controller_position = strpos($controller_class['file path'],'/controllers/');
-						$url = substr($controller_class['file path'],$controller_position + 12,-14);
-						$url = str_replace('_','-','/'.strtolower(trim($url.'/'.$action,'/')));
+						$controller_position = strpos($controller_class['file path'], '/controllers/');
+						$url = substr($controller_class['file path'], $controller_position + 12, -14);
+						$url = str_replace('_', '-', '/'.strtolower(trim($url.'/'.$action, '/')));
 						$text = trim(ucwords(strtolower(str_replace(['/','_','-'], ' ', $url))), ' ');
 
 						$groups[$url] = "ci('o_nav_model')->migration_add('".$url."','".$text."',\$this->hash());";
@@ -487,9 +487,9 @@ class Migration_helperController extends MY_Controller
 			$display_array[$k] = $k;
 		}
 
-		$selected = ci('console')->get_checkboxes('Select the URLs you would like to create migrations for:',$display_array,'u');
+		$selected = ci('console')->get_checkboxes('Select the URLs you would like to create migrations for:', $display_array, 'u');
 
-		$up_source_group = array_intersect_key($groups,array_combine($selected,$selected));
+		$up_source_group = array_intersect_key($groups, array_combine($selected, $selected));
 
 		foreach ($up_source_group as $up) {
 			$this->up_source[] = $up;
@@ -497,7 +497,7 @@ class Migration_helperController extends MY_Controller
 
 		$this->down_source[] = "ci('o_nav_model')->migration_remove(\$this->hash());";
 
-		$this->write_file('nav','nav');
+		$this->write_file('nav', 'nav');
 	}
 	/**
 	 *
@@ -522,7 +522,7 @@ class Migration_helperController extends MY_Controller
 		ci('orange_inspector_collector')->cli_end_point('/cli/Orange_inspector_cli/inspect');
 
 		foreach (orange_locator::controllers() as $name=>$record) {
-			if ($this->package_path == trim($record['package'],'/')) {
+			if ($this->package_path == trim($record['package'], '/')) {
 				ci('orange_inspector_collector')->inspect($record['controller']);
 			}
 		}
@@ -538,8 +538,8 @@ class Migration_helperController extends MY_Controller
 		/* now for each of the controllers we need to create a migration */
 		foreach ($details as $controller_class) {
 			foreach ($controller_class['methods'] as $method) {
-				if ($method['public'] && substr($method['name'],-6) == 'Action') {
-					$pieces = preg_split('/(?=[A-Z])/',$method['name']);
+				if ($method['public'] && substr($method['name'], -6) == 'Action') {
+					$pieces = preg_split('/(?=[A-Z])/', $method['name']);
 					$count_pieces = count($pieces);
 
 					if ($count_pieces == 3) {
@@ -547,7 +547,7 @@ class Migration_helperController extends MY_Controller
 						$url_piece = $pieces[0];
 						$request_type = strtolower($pieces[1]);
 						$action = $pieces[2];
-					} elseif($count_pieces == 2) {
+					} elseif ($count_pieces == 2) {
 						/* foobarAction */
 						$url_piece = $pieces[0];
 						$request_type = 'get';
@@ -556,12 +556,12 @@ class Migration_helperController extends MY_Controller
 						ci('console')->error('spliting method "'.$method['name'].'" failed must have 2 or 3 sections seperated by uppercase letters.');
 					}
 
-					if (!in_array($request_type,['cli'])) {
-						$controller_position = strpos($controller_class['file path'],'/controllers/');
-						$url = substr($controller_class['file path'],$controller_position + 12,-14);
-						$group = filter('human',$url);
+					if (!in_array($request_type, ['cli'])) {
+						$controller_position = strpos($controller_class['file path'], '/controllers/');
+						$url = substr($controller_class['file path'], $controller_position + 12, -14);
+						$group = filter('human', $url);
 						$key = strtolower('url::'.$url.'::'.$url_piece.'~'.$request_type);
-						$description = filter('human',$url.' '.$url_piece.' '.$request_type);
+						$description = filter('human', $url.' '.$url_piece.' '.$request_type);
 
 						$groups[] = "ci('o_permission_model')->migration_add('".$key."','".$group."','".$description."',\$this->hash());";
 					}
@@ -577,7 +577,7 @@ class Migration_helperController extends MY_Controller
 
 		$this->down_source[] = "ci('o_permission_model')->migration_remove(\$this->hash());";
 
-		$this->write_file('permission','permission');
+		$this->write_file('permission', 'permission');
 	}
 
 	/**
@@ -608,31 +608,31 @@ class Migration_helperController extends MY_Controller
 			$groups[$row['group']] = $row['group'];
 		}
 
-		$selected_group = ci('console')->get_radioboxes('Please select a group you wish to export settings from:',$groups,'g');
+		$selected_group = ci('console')->get_radioboxes('Please select a group you wish to export settings from:', $groups, 'g');
 
-		$query = $db->get_where('orange_settings',['group'=>$selected_group]);
+		$query = $db->get_where('orange_settings', ['group'=>$selected_group]);
 
 		foreach ($query->result_array() as $row) {
 			$group_items[$row['name']] = $row['name'];
 		}
 
-		$selected_records = ci('console')->get_checkboxes('Please select the settings your would like to build a migration for:',$group_items,'n');
+		$selected_records = ci('console')->get_checkboxes('Please select the settings your would like to build a migration for:', $group_items, 'n');
 
 		$this->down_source[] = "ci('o_setting_model')->migration_remove(\$this->hash());";
 
 		foreach ($selected_records as $name) {
-			$row = $db->get_where('orange_settings',['group'=>$selected_group,'name'=>$name])->row_array();
+			$row = $db->get_where('orange_settings', ['group'=>$selected_group,'name'=>$name])->row_array();
 
-			$name = str_replace("'","\'",$row['name']);
-			$group = str_replace("'","\'",$row['group']);
-			$value = str_replace(["'",chr(10),chr(13)],["\'",'',''],$row['value']);
-			$help = str_replace(["'",chr(10),chr(13)],["\'",'',''],$row['help']);
-			$options = str_replace(["'",chr(10),chr(13)],["\'",'',''],$row['options']);
+			$name = str_replace("'", "\'", $row['name']);
+			$group = str_replace("'", "\'", $row['group']);
+			$value = str_replace(["'",chr(10),chr(13)], ["\'",'',''], $row['value']);
+			$help = str_replace(["'",chr(10),chr(13)], ["\'",'',''], $row['help']);
+			$options = str_replace(["'",chr(10),chr(13)], ["\'",'',''], $row['options']);
 
 			$this->up_source[] = "ci('o_setting_model')->migration_add('$name', '$group', '$value', '$help', '$options', \$this->hash());";
 		}
 
-		$this->write_file('settings_'.$selected_group,'settings');
+		$this->write_file('settings_'.$selected_group, 'settings');
 	}
 
 	/**
@@ -652,7 +652,7 @@ class Migration_helperController extends MY_Controller
 	 *
 	 * ```
 	 */
-	protected function write_file(string $filename,string $template) : void
+	protected function write_file(string $filename, string $template) : void
 	{
 		if (!$this->in_loop) {
 			$up = '';
@@ -667,7 +667,7 @@ class Migration_helperController extends MY_Controller
 				$down .= chr(9).chr(9).$s.PHP_EOL;
 			}
 
-			ci('package_migration_cli_wrapper')->create($filename.'_'.date('Y_m_d'), trim($up), trim($down),'Migration_'.$template.'_template');
+			ci('package_migration_cli_wrapper')->create($filename.'_'.date('Y_m_d'), trim($up), trim($down), 'Migration_'.$template.'_template');
 
 			exit(1);
 		}
@@ -692,9 +692,9 @@ class Migration_helperController extends MY_Controller
 	protected function capture_package() : Migration_helperController
 	{
 		if (empty($this->package_path)) {
-			$selected_package_path = ci('console')->get_radioboxes('Select the package you would like to create a migration for:',get_packages(null,null,true),'p');
+			$selected_package_path = ci('console')->get_radioboxes('Select the package you would like to create a migration for:', get_packages(null, null, true), 'p');
 
-			$this->package_path = trim(str_replace(ROOTPATH.'/','',$selected_package_path),'/');
+			$this->package_path = trim(str_replace(ROOTPATH.'/', '', $selected_package_path), '/');
 
 			$migration_path = '/'.trim(str_replace(ROOTPATH, '', config('migration.migration_path', '/support/migrations/')), '/');
 

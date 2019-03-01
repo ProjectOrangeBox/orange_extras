@@ -44,12 +44,12 @@ class ShowController extends MY_Controller
 	/**
 	 * Show all registered packages. Use optional -p to show path instead of help
 	 */
-	public function packagesCliAction($arg='') : void
+	public function packagesCliAction(string $arg = '') : void
 	{
 		ci('console')->h1('Registered Packages');
 
-		foreach (get_packages(null,'app') as $path) {
-			ci('console')->out(str_replace(ROOTPATH,'',$path));
+		foreach (get_packages(null, 'app') as $path) {
+			ci('console')->out(str_replace(ROOTPATH, '', $path));
 		}
 
 		ci('console')->br();
@@ -58,7 +58,7 @@ class ShowController extends MY_Controller
 	/**
 	 * Show all registered validation classes. Use optional -p to show path instead of help
 	 */
-	public function validateCliAction($arg='') : void
+	public function validateCliAction(string $arg = '') : void
 	{
 		$this->options($arg)->loop_over('(.*)/libraries/validations/Validate_(.*).php');
 	}
@@ -66,7 +66,7 @@ class ShowController extends MY_Controller
 	/**
 	 * Show all registered pear classes. Use optional -p to show path instead of help
 	 */
-	public function pearCliAction($arg='') : void
+	public function pearCliAction(string $arg = '') : void
 	{
 		$this->options($arg)->loop_over('(.*)/libraries/pear_plugins/Pear_(.*).php');
 	}
@@ -74,7 +74,7 @@ class ShowController extends MY_Controller
 	/**
 	 * Show all registered filter classes. Use optional -p to show path instead of help
 	 */
-	public function filterCliAction($arg='') : void
+	public function filterCliAction(string $arg = '') : void
 	{
 		$this->options($arg)->loop_over('(.*)/libraries/filters/Filter_(.*).php');
 	}
@@ -82,7 +82,7 @@ class ShowController extends MY_Controller
 	/**
 	 * Show all registered models classes. Use optional -p to show path instead of help
 	 */
-	public function modelsCliAction($arg='') : void
+	public function modelsCliAction(string $arg = '') : void
 	{
 		$this->options($arg)->loop_over('(.*)/models/(.*)_model.php');
 	}
@@ -98,7 +98,7 @@ class ShowController extends MY_Controller
 	/**
 	 * Show all registered controller traits. Use optional -p to show path instead of help
 	 */
-	public function controller_traitsCliAction($arg='') : void
+	public function controller_traitsCliAction(string $arg = '') : void
 	{
 		$this->options($arg)->loop_over('(.*)/controllers/traits/(.*)_trait.php');
 	}
@@ -106,14 +106,14 @@ class ShowController extends MY_Controller
 	/**
 	 * Show all registered middleware. Use optional -p to show path instead of help
 	 */
-	public function middlewareCliAction($arg='') : void
+	public function middlewareCliAction(string $arg = '') : void
 	{
 		$this->options($arg)->loop_over('(.*)/middleware/(.*)Middleware.php');
 	}
 
 	/* protected */
 
-	protected function options(string $arg) : ShowController
+	protected function options(string $arg = '') : ShowController
 	{
 		switch (strtolower($arg)) {
 			case '_p':
@@ -137,18 +137,18 @@ class ShowController extends MY_Controller
 	protected function loop_over(string $regex) : void
 	{
 		foreach (orange_locator::classes() as $name=>$path) {
-			if (preg_match('#^'.$regex.'$#i',$path, $matches, PREG_OFFSET_CAPTURE)) {
-				ci('console')->info(basename($matches[0][0],'.php'));
+			if (preg_match('#^'.$regex.'$#i', $path, $matches, PREG_OFFSET_CAPTURE)) {
+				ci('console')->info(basename($matches[0][0], '.php'));
 
 				switch ($this->show) {
 					case 'path':
 						$this->get_path($matches[0][0]);
 					break;
 					case 'details':
-						$this->get_between_tags($matches[0][0],'@details');
+						$this->get_between_tags($matches[0][0], '@details');
 					break;
 					case 'help':
-						$this->get_tag($matches[0][0],'@help');
+						$this->get_tag($matches[0][0], '@help');
 					break;
 				}
 			}
@@ -159,10 +159,10 @@ class ShowController extends MY_Controller
 
 	protected function get_path(string $filepath) : void
 	{
-		ci('console')->out(chr(9).str_replace(ROOTPATH, '',$filepath))->br();
+		ci('console')->out(chr(9).str_replace(ROOTPATH, '', $filepath))->br();
 	}
 
-	protected function get_between_tags(string $filepath,string $tag) : void
+	protected function get_between_tags(string $filepath, string $tag) : void
 	{
 		if (preg_match_all('/'.$tag.'(.*)'.$tag.'/is', file_get_contents($filepath), $matches, PREG_SET_ORDER, 0)) {
 			$this->echo_block($matches);
@@ -173,7 +173,7 @@ class ShowController extends MY_Controller
 		ci('console')->br();
 	}
 
-	protected function get_tag(string $filepath,string $tag) : void
+	protected function get_tag(string $filepath, string $tag) : void
 	{
 		if (preg_match_all('/'.$tag.' (.*)/i', file_get_contents($filepath), $matches, PREG_SET_ORDER, 0)) {
 			$this->echo_block($matches);
@@ -187,7 +187,7 @@ class ShowController extends MY_Controller
 	protected function echo_block(array $matches) : void
 	{
 		foreach ($matches as $m) {
-			foreach (explode(PHP_EOL,$m[1]) as $line) {
+			foreach (explode(PHP_EOL, $m[1]) as $line) {
 				$line = trim($line);
 				if (!empty($line)) {
 					ci('console')->out(chr(9).trim($line));
@@ -195,5 +195,4 @@ class ShowController extends MY_Controller
 			}
 		}
 	}
-
 } /* end class */

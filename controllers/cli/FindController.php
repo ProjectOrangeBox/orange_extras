@@ -23,7 +23,7 @@
 
 class FindController extends MY_Controller
 {
-	public function helpCliAction()
+	public function helpCliAction() : void
 	{
 		ci('console')->help([
 			['Find PHP files matching entered search parse.'=>'find/file database_model'],
@@ -33,16 +33,16 @@ class FindController extends MY_Controller
 	/**
 	 *	Search your application for files.
 	 */
-	public function fileCliAction($filename=null)
+	public function fileCliAction(string $filename = null) : void
 	{
-		$filename = ci('console')->get_arg(1,true,'file search term');
+		$filename = ci('console')->get_arg(1, true, 'file search term');
 
 		ci('console')->h1('Looking for "'.$filename.'"');
 
-		foreach (get_packages('app','system',true) as $package) {
+		foreach (get_packages('app', 'system', true) as $package) {
 			foreach (new \RegexIterator(new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($package)), '/(.*)(?P<search>'.preg_quote($filename).')(.*)/mi', RecursiveRegexIterator::GET_MATCH) as $match) {
-				if (strpos($match[0],'/.') === false) {
-					ci('console')->out(str_replace($match['search'],'<cyan>'.$match['search'].'</cyan>',str_replace(ROOTPATH, '', $match[0])));
+				if (strpos($match[0], '/.') === false) {
+					ci('console')->out(str_replace($match['search'], '<cyan>'.$match['search'].'</cyan>', str_replace(ROOTPATH, '', $match[0])));
 				}
 			}
 		}

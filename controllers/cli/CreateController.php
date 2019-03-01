@@ -25,23 +25,20 @@ class CreateController extends MY_Controller
 {
 	protected $package_folder;
 
-	public function helpCliAction()
+	public function helpCliAction() : void
 	{
 		ci('console')->help([
-			['Create a Package.'],
-			['package folder path & url must be included.'=>'create/package foldername/package_name /admin/details'],
+			['Create a Package for the provided package path and url path.'],
+			['package folder path & url must be included.'],
+			['-p package folder'],
+			['-u url'=>'create/package'],
 		]);
 	}
 
-	/**
-	 *	Generate a generic package
-	 *
-	 *	php index.php cli/create/package package_folder/package_name url_path
-	 */
-	public function packageCliAction()
+	public function packageCliAction() : void
 	{
-		$package = trim(ci('console')->get_arg(1,true,'package path'),'/');
-		$folder = trim(ci('console')->get_arg(2,true,'controller url'),'/');
+		$package = trim(ci('console')->get_arg(1, true, 'package path', 'p'), '/');
+		$folder = trim(ci('console')->get_arg(2, true, 'controller url', 'u'), '/');
 
 		$this->package_folder = ROOTPATH.'/packages/'.$package;
 
@@ -49,7 +46,7 @@ class CreateController extends MY_Controller
 		if (!file_exists($this->package_folder)) {
 			$umask = umask();
 			umask(0);
-			if (!@mkdir($this->package_folder,0777,true)) {
+			if (!@mkdir($this->package_folder, 0777, true)) {
 				ci('console')->error('Could not make the package path "'.$this->package_folder.'".');
 			}
 			umask($umask);
@@ -76,14 +73,14 @@ class CreateController extends MY_Controller
 		$this->make('libraries');
 		$this->make('support');
 
-		$ut_name = str_replace(' ','',ucwords(str_replace('/',' ',dirname($folder).' '.ucfirst($controller_filename))));
+		$ut_name = str_replace(' ', '', ucwords(str_replace('/', ' ', dirname($folder).' '.ucfirst($controller_filename))));
 
-		$this->make('support/'.$ut_name.'Test.php','unittest',$data + ['ut_name'=>$ut_name]);
+		$this->make('support/'.$ut_name.'Test.php', 'unittest', $data + ['ut_name'=>$ut_name]);
 		$this->make('support/migration');
 		$this->make('support/migration/001_init.php', '001_init', $data);
 	}
 
-	protected function make($name, $template=null, $data=[])
+	protected function make(string $name,string $template = null,array $data = []) : void
 	{
 		$name = ltrim($name, '/');
 
@@ -105,7 +102,7 @@ class CreateController extends MY_Controller
 
 			$path = $this->package_folder.'/'.$name;
 
-			ci('console')->out('Using Template "'.str_replace(ROOTPATH,'',$template_file).'" to create "'.str_replace(ROOTPATH,'',$path).'".');
+			ci('console')->out('Using Template "'.str_replace(ROOTPATH, '', $template_file).'" to create "'.str_replace(ROOTPATH, '', $path).'".');
 
 			@mkdir(dirname($path), 0775, true);
 			file_put_contents($path, $template);

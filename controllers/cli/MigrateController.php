@@ -66,7 +66,7 @@ class MigrateController extends MY_Controller
 	/**
 	 * show help
 	 */
-	public function helpCliAction()
+	public function helpCliAction() : void
 	{
 		ci('console')->help([
 			['Run all migrations found in the application migration folder.'=>['migrate/up','migrate/latest']],
@@ -86,7 +86,7 @@ class MigrateController extends MY_Controller
 	/**
 	 * Wrapper for migrate/current
 	 */
-	public function upCliAction()
+	public function upCliAction() : void
 	{
 		$this->parse_arguments();
 
@@ -96,7 +96,7 @@ class MigrateController extends MY_Controller
 	/**
 	 * Wrapper for migrate/version/###
 	 */
-	public function downCliAction()
+	public function downCliAction() : void
 	{
 		$this->parse_arguments(true);
 
@@ -113,7 +113,7 @@ class MigrateController extends MY_Controller
 	 *
 	 * TRUE if no migrations are found, current version string on success, FALSE on failure
 	 */
-	public function latestCliAction()
+	public function latestCliAction() : void
 	{
 		$this->parse_arguments();
 
@@ -127,7 +127,7 @@ class MigrateController extends MY_Controller
 	 *
 	 * TRUE if no migrations are found, current version string on success, FALSE on failure
 	 */
-	public function currentCliAction()
+	public function currentCliAction() : void
 	{
 		$this->parse_arguments();
 
@@ -146,7 +146,7 @@ class MigrateController extends MY_Controller
 	 *
 	 * TRUE if no migrations are found, current version string on success, FALSE on failure
 	 */
-	public function versionCliAction()
+	public function versionCliAction() : void
 	{
 		$this->parse_arguments(true);
 
@@ -158,7 +158,7 @@ class MigrateController extends MY_Controller
 	 *
 	 * https://www.codeigniter.com/user_guide/libraries/migration.html#CI_Migration::find_migrations
 	 */
-	public function findCliAction()
+	public function findCliAction() : void
 	{
 		$migration_folder = '/'.trim(str_replace(ROOTPATH, '', config('migration.migration_path', '/support/migrations/')), '/');
 

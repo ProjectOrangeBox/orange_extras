@@ -374,7 +374,7 @@ class Package_migration
 		return $this;
 	}
 
-	public function create(string $description, string $up , string $down, string $template)
+	public function create(string $description, string $up, string $down, string $template)
 	{
 		$name = ($description) ? filter('filename', $description) : 'migration';
 		$stamp = (config('migration.migration_type') == 'timestamp') ? date('YmdHis') : $this->get_next_sequential($this->_migration_path);

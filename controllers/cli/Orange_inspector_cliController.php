@@ -2,7 +2,6 @@
 
 class Orange_inspector_cliController extends MY_Controller
 {
-
 	public function helpCliAction() : void
 	{
 		ci('console')->help([
@@ -10,7 +9,7 @@ class Orange_inspector_cliController extends MY_Controller
 		]);
 	}
 
-	public function inspectCliAction()
+	public function inspectCliAction() : void
 	{
 		ci('orange_inspector')->as_json($_SERVER['argv'][2]);
 	}

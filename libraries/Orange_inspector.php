@@ -12,10 +12,9 @@
  */
 class Orange_inspector
 {
-
-	public function as_json(string $filepath,bool $direct= true) : string
+	public function as_json(string $filepath, bool $direct= true) : string
 	{
-		$json_string = json_encode($this->reflect($filepath),JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP|JSON_UNESCAPED_UNICODE);
+		$json_string = json_encode($this->reflect($filepath), JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP|JSON_UNESCAPED_UNICODE);
 
 		if ($direct) {
 			echo $json_string;
@@ -145,24 +144,23 @@ class Orange_inspector
 
 	protected function documents(string $comment) : string
 	{
-		$lines = explode(PHP_EOL,$comment);
+		$lines = explode(PHP_EOL, $comment);
 		$c = '';
 
 		foreach ($lines as $line) {
 			$line = trim($line);
 
-			if (substr($line,0,3) == '/**') {
+			if (substr($line, 0, 3) == '/**') {
 				/* do nothing */
-			} elseif(substr($line,0,2) == '*/') {
+			} elseif (substr($line, 0, 2) == '*/') {
 				/* do nothing */
-			} elseif(substr($line,0,3) == '* @') {
+			} elseif (substr($line, 0, 3) == '* @') {
 				/* do nothing */
-			} elseif(substr($line,0,2) == '* ') {
-				$c .= trim(substr($line,2)).PHP_EOL;
+			} elseif (substr($line, 0, 2) == '* ') {
+				$c .= trim(substr($line, 2)).PHP_EOL;
 			}
 		}
 
 		return trim($c);
 	}
-
 } /* end class */

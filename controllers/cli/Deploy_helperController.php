@@ -26,7 +26,7 @@ class Deploy_helperController extends MY_Controller
 	/**
 	 * Generate the Deploy JSON for adding all found GIT Repositories
 	 */
-	public function helpCliAction()
+	public function helpCliAction() : void
 	{
 		ci('console')->help([
 			['Generate gitx status deploy.json syntax for all loaded packages'=>'deploy_helper/gitx_status'],
@@ -36,26 +36,26 @@ class Deploy_helperController extends MY_Controller
 		]);
 	}
 
-	public function gitx_statusCliAction()
+	public function gitx_statusCliAction() : void
 	{
 		/* "gitx update {PWD}/packages/projectorangebox/extra-validations {GITBRANCH}" */
-		$this->inspect(function($folder) {
+		$this->inspect(function ($folder) {
 			ci('console')->out('"gitx status {PWD}'.$folder.'",');
 		});
 	}
 
-	public function gitx_updateCliAction()
+	public function gitx_updateCliAction() : void
 	{
 		/* "gitx update {PWD}/packages/projectorangebox/extra-validations {GITBRANCH}" */
-		$this->inspect(function($folder) {
+		$this->inspect(function ($folder) {
 			ci('console')->out('"gitx update {PWD}'.$folder.'",');
 		});
 	}
 
-	public function gitx_checkoutCliAction()
+	public function gitx_checkoutCliAction() : void
 	{
 		/* gitx checkout https://github.com/ProjectOrangeBox/Orange_v2_cli.git {PWD}/packages/projectorangebox/migrations {GITBRANCH} */
-		$this->inspect(function($folder,$package) {
+		$this->inspect(function ($folder, $package) {
 			if ($remote = $this->get_remote($package)) {
 				/* gitx checkout https://github.com/ProjectOrangeBox/Orange_v2_cli.git {PWD}/packages/projectorangebox/migrations {GITBRANCH} */
 				ci('console')->out('"gitx checkout '.$remote.' {PWD}'.$folder.' {GITBRANCH}",');
@@ -63,24 +63,24 @@ class Deploy_helperController extends MY_Controller
 		});
 	}
 
-	public function migrate_upCliAction()
+	public function migrate_upCliAction() : void
 	{
 		/* "cd {PWD}/public;php index.php cli/migrate/up packages/projectorangebox/scaffolding" 	*/
-		$this->inspect(function($folder) {
+		$this->inspect(function ($folder) {
 			ci('console')->out('"cd {PWD};php public/index.php cli/migrate/up'.$folder.'",');
 		});
 	}
 
-	protected function inspect($callback)
+	protected function inspect(callable $callback) : void
 	{
 		ci('console')->h1('Deploy Syntax - copy and paste as needed.');
 
-		foreach (get_packages('root',null,true) as $idx=>$package) {
-			$callback('/'.trim(str_replace(ROOTPATH, '', $package), '/'),$package);
+		foreach (get_packages('root', null, true) as $idx=>$package) {
+			$callback('/'.trim(str_replace(ROOTPATH, '', $package), '/'), $package);
 		}
 	}
 
-	protected function get_remote($package)
+	protected function get_remote(string $package)
 	{
 		$package = (empty($package)) ? ROOTPATH : $package;
 
