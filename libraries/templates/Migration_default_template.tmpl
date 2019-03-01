@@ -2,7 +2,7 @@
 
 /* {name}.php */
 
-class Migration_{name} extends Migration_base
+class Migration_{name} extends \Migration_base
 {
 
 	public function up()
@@ -10,7 +10,7 @@ class Migration_{name} extends Migration_base
 		echo $this->migration('up');
 
 		{up}
-		
+
 		return true;
 	}
 
@@ -19,7 +19,7 @@ class Migration_{name} extends Migration_base
 		echo $this->migration('down');
 
 		{down}
-		
+
 		return true;
 	}
 

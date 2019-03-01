@@ -101,7 +101,7 @@ class Simple_q extends CI_Model
 	public function update($token, $status)
 	{
 		if (!array_key_exists($status, $this->status_map)) {
-			throw new Exception('Unknown Simple Q record status "'.$status.'".');
+			throw new \Exception('Unknown Simple Q record status "'.$status.'".');
 		}
 
 		return $this->db->limit(1)->update($this->table, ['token'=>null,'updated'=>date('Y-m-d H:i:s'),'status'=>$this->status_map[$status]], ['token'=>$token]);
@@ -120,7 +120,7 @@ class Simple_q extends CI_Model
 		} elseif (is_array($data)) {
 			$payload->type = 'array';
 		} else {
-			throw new Exception('Could not encode Simple Q data.');
+			throw new \Exception('Could not encode Simple Q data.');
 		}
 
 		$payload->data = $data;
@@ -144,11 +144,11 @@ class Simple_q extends CI_Model
 				$data = $payload_record->data;
 			break;
 			default:
-				throw new Exception('Could not determine Simple Q data type.');
+				throw new \Exception('Could not determine Simple Q data type.');
 		}
 
 		if (!$this->check_checksum($payload_record->checksum, $data)) {
-			throw new Exception('Simple Q data checksum failed.');
+			throw new \Exception('Simple Q data checksum failed.');
 		}
 
 		return $data;
@@ -168,7 +168,7 @@ class Simple_q extends CI_Model
 	{
 		if ($queue === null) {
 			if (!$this->default_queue) {
-				throw new Exception('Simple Q default queue not set.');
+				throw new \Exception('Simple Q default queue not set.');
 			}
 
 			$queue = $this->default_queue;

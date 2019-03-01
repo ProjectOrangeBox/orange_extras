@@ -10,12 +10,12 @@
  * @link	https://github.com/ProjectOrangeBox
  *
  */
-class Validate_max_dim extends Validate_base
+class Validate_max_dim extends \Validate_base
 {
 	public function validate(&$field, string $options = '') : bool
 	{
 		if (!function_exists('getimagesize')) {
-			throw new Exception('Get Image Size Function Not Supported');
+			throw new \Exception('Get Image Size Function Not Supported');
 		}
 
 		$dim = explode(',', $options);

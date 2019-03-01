@@ -10,7 +10,7 @@
  * @link	https://github.com/ProjectOrangeBox
  *
  */
-class Filter_phone extends Filter_base
+class Filter_phone extends \Filter_base
 {
 	public function filter(&$field, string $options = '') : void
 	{

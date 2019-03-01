@@ -10,7 +10,7 @@
  * @link	https://github.com/ProjectOrangeBox
  *
  */
-class Validate_symbolic_link extends Validate_base
+class Validate_symbolic_link extends \Validate_base
 {
 	public function validate(&$field, string $options = '') : bool
 	{

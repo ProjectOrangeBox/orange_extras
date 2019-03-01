@@ -10,7 +10,7 @@
  * @link	https://github.com/ProjectOrangeBox
  *
  */
-class Validate_if_empty extends Validate_base
+class Validate_if_empty extends \Validate_base
 {
 	/*
 	if_empty[never()] - in the future

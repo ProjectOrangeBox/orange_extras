@@ -10,7 +10,7 @@
  * @link	https://github.com/ProjectOrangeBox
  *
  */
-class Filter_substr extends Filter_base
+class Filter_substr extends \Filter_base
 {
 	/**
 	 * copy[field]

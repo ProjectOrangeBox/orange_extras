@@ -11,7 +11,7 @@
  * @help cleans email doesn't validate it is a email
  *
  */
-class Filter_email extends Filter_base
+class Filter_email extends \Filter_base
 {
 	public function filter(&$field, string $options = '') : void
 	{

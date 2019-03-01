@@ -10,7 +10,7 @@
  * @link	https://github.com/ProjectOrangeBox
  *
  */
-class Filter_copy extends Filter_base
+class Filter_copy extends \Filter_base
 {
 	/* copy[field] */
 	public function filter(&$field, string $options = '') : void

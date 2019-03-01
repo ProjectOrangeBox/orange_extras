@@ -10,7 +10,7 @@
  * @link	https://github.com/ProjectOrangeBox
  *
  */
-class Validate_md5 extends Validate_base
+class Validate_md5 extends \Validate_base
 {
 	public function validate(&$field, string $options = '') : bool
 	{

@@ -10,7 +10,7 @@
  * @link	https://github.com/ProjectOrangeBox
  *
  */
-class Validate_matches_pattern extends Validate_base
+class Validate_matches_pattern extends \Validate_base
 {
 	public function validate(&$field, string $options = '') : bool
 	{

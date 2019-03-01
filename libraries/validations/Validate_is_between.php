@@ -10,7 +10,7 @@
  * @link	https://github.com/ProjectOrangeBox
  *
  */
-class Validate_is_between extends Validate_base
+class Validate_is_between extends \Validate_base
 {
 	/* is_between[1,100] */
 	public function validate(&$field, string $options = '') : bool

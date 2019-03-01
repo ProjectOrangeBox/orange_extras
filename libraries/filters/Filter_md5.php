@@ -10,7 +10,7 @@
  * @link	https://github.com/ProjectOrangeBox
  *
  */
-class Filter_md5 extends Filter_base
+class Filter_md5 extends \Filter_base
 {
 	public function filter(&$field, string $options = '') : void
 	{

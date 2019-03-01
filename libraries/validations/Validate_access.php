@@ -10,7 +10,7 @@
  * @link	https://github.com/ProjectOrangeBox
  *
  */
-class Validate_access extends Validate_base
+class Validate_access extends \Validate_base
 {
 	/* access['edit::monkeys'] translates to user can('edit::monkeys')  */
 	public function validate(&$field, string $options = '') : bool

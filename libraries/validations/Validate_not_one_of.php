@@ -10,7 +10,7 @@
  * @link	https://github.com/ProjectOrangeBox
  *
  */
-class Validate_not_one_of extends Validate_base
+class Validate_not_one_of extends \Validate_base
 {
 	public function validate(&$field, string $options = '') : bool
 	{

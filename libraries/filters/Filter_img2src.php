@@ -10,7 +10,7 @@
  * @link	https://github.com/ProjectOrangeBox
  *
  */
-class Filter_img2src extends Validate
+class Filter_img2src extends \Filter_base
 {
 	public function filter(&$field, string $options = '') : void
 	{

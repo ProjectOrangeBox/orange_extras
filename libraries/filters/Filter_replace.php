@@ -11,7 +11,7 @@
  * @help filter_replace[find,replace,find1,replace1]
  *
  */
-class Filter_replace extends Filter_base
+class Filter_replace extends \Filter_base
 {
 	public function filter(&$field, string $options = '') : void
 	{

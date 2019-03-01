@@ -11,7 +11,7 @@
  * @help extracts datauri to path and returns url
  *
  */
-class Filter_datauri extends Validate
+class Filter_datauri extends \Filter_base
 {
 	public function filter(&$field, string $options = '') : void
 	{
