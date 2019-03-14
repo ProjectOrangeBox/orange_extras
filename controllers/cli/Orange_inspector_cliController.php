@@ -5,7 +5,7 @@ class Orange_inspector_cliController extends \MY_Controller
 	public function helpCliAction() : void
 	{
 		ci('console')->help([
-			['Used internally to reflect on a class.'=>'inspect'],
+			['Used internally to reflect on a class.'=>'%%/inspect'],
 		]);
 	}
 

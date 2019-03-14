@@ -26,7 +26,7 @@ class FindController extends \MY_Controller
 	public function helpCliAction() : void
 	{
 		ci('console')->help([
-			['Find PHP files matching entered search parse.'=>'find/file database_model'],
+			['Find PHP files matching entered search parse.'=>'%%/file database_model'],
 		]);
 	}
 

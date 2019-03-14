@@ -69,17 +69,17 @@ class MigrateController extends \MY_Controller
 	public function helpCliAction() : void
 	{
 		ci('console')->help([
-			['Run all migrations found in the application migration folder.'=>['migrate/up','migrate/latest']],
-			['Run all migrations found in the /packages/misc/orange_snippets migration folder.'=>['migrate/up /packages/misc/orange_snippets','migrate/latest /packages/misc/orange_snippets']],
-			['Run all migrations down to number 3 in the application migration folder.'=>'migrate/down 3'],
-			['Run all migrations down to number 3 in the /packages/misc/orange_snippets migration folder.'=>'migrate/down /packages/misc/orange_snippets 3'],
+			['Run all migrations found in the application migration folder.'=>['%%/up','%%/latest']],
+			['Run all migrations found in the /packages/misc/orange_snippets migration folder.'=>['%%/up /packages/misc/orange_snippets','%%/latest /packages/misc/orange_snippets']],
+			['Run all migrations down to number 3 in the application migration folder.'=>'%%/down 3'],
+			['Run all migrations down to number 3 in the /packages/misc/orange_snippets migration folder.'=>'%%/down /packages/misc/orange_snippets 3'],
 			['Migrates up to the current version in the application migration folder'],
-			['Whatever is set for $config[\'migration_version\'] in application/config/migration.php.'=>'migrate/current'],
+			['Whatever is set for $config[\'migration_version\'] in application/config/migration.php.'=>'%%/current'],
 			['Migrates up to the current version in the /packages/misc/orange_snippets migration folder'],
-			['Whatever is set for $config[\'migration_version@packages/misc/orange_snippets\'] in application/config/migration.php.'=>'migrate/current /packages/misc/orange_snippets'],
+			['Whatever is set for $config[\'migration_version@packages/misc/orange_snippets\'] in application/config/migration.php.'=>'%%/current /packages/misc/orange_snippets'],
 			['Run all migrations in the application migration folder up or down to 3.'=>'packages/misc/orange_snippets 3'],
 			['Run all migrations in the /packages/misc/orange_snippets migration folder up or down to 3.'=>'packages/misc/orange_snippets /packages/misc/orange_snippets 3'],
-			['Display all migration found.'=>'migrate/find'],
+			['Display all migration found.'=>'%%/find'],
 		]);
 	}
 

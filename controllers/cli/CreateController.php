@@ -31,7 +31,7 @@ class CreateController extends \MY_Controller
 			['Create a Package for the provided package path and url path.'],
 			['package folder path & url must be included.'],
 			['-p package folder'],
-			['-u url'=>'create/package'],
+			['-u url'=>'%%/package'],
 		]);
 	}
 

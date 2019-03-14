@@ -177,7 +177,7 @@ class Migration_helperController extends \MY_Controller
 		$this->in_loop = true;
 
 		while ($this->in_loop) {
-			$action = $this->get_radioboxes('What would you like to do?', $actions, 'a');
+			$action = ci('console')->get_radioboxes('What would you like to do?', $actions, 'a');
 
 			$action .= 'Cliaction';
 
@@ -238,9 +238,20 @@ class Migration_helperController extends \MY_Controller
 	 */
 	public function create_table_inCliAction() : void
 	{
+		ci('console')->h2('Note: Create Table currently only works with databases which support "SHOW CREATE TABLE".');
+
 		$this->capture_package();
 
-		$database_config = ci('console')->get_arg(2, false, 'Database Connection', 'default', 'd');
+		$db = [];
+
+		include APPPATH.'/config/database.php';
+
+		$connections = array_keys($db);
+
+		$database_config = ci('console')->get_radioboxes('Please select your database connection:', $connections, 'd');
+
+
+		$database_config = 'default';
 
 		$db = ci()->load->database($database_config, true);
 

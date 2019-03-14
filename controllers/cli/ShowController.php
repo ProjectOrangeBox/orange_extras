@@ -28,16 +28,16 @@ class ShowController extends \MY_Controller
 	public function helpCliAction() : void
 	{
 		ci('console')->help([
-			['Show all registered package paths.'=>'show/packages'],
-			['Show all registered pear plugins.'=>'show/pear'],
-			['Show all registered validations.'=>'show/validate'],
-			['Show all registered filters.'=>'show/filter'],
-			['Show all registered models.'=>'show/models'],
-			['Show all registered controllers.'=>'show/controllers'],
-			['Show all registered controller traits.'=>'show/controller-traits'],
-			['Show all registered middleware.'=>'show/middleware'],
-			['* -p suffix will show the files path.'],
-			['* -d suffix will show the files details.'],
+			['Show all registered package paths.'=>'%%/packages'],
+			['Show all registered pear plugins.'=>'%%/pear'],
+			['Show all registered validations.'=>'%%/validate'],
+			['Show all registered filters.'=>'%%/filter'],
+			['Show all registered models.'=>'%%/models'],
+			['Show all registered controllers.'=>'%%/controllers'],
+			['Show all registered controller traits.'=>'%%/controller-traits'],
+			['Show all registered middleware.'=>'%%/middleware'],
+			['-p suffix will show the files path.'],
+			['-d suffix will show the files details.'],
 		]);
 	}
 

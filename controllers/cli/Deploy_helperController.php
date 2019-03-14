@@ -29,10 +29,10 @@ class Deploy_helperController extends \MY_Controller
 	public function helpCliAction() : void
 	{
 		ci('console')->help([
-			['Generate gitx status deploy.json syntax for all loaded packages'=>'deploy_helper/gitx_status'],
-			['Generate gitx update deploy.json syntax for all loaded packages'=>'deploy_helper/gitx_update'],
-			['Generate gitx checkout deploy.json syntax for all loaded packages'=>'deploy_helper/gitx_checkout'],
-			['Generate migrate up deploy.json syntax for all loaded packages'=>'deploy_helper/migrate_up'],
+			['Generate gitx status deploy.json syntax for all loaded packages'=>'%%/gitx_status'],
+			['Generate gitx update deploy.json syntax for all loaded packages'=>'%%/gitx_update'],
+			['Generate gitx checkout deploy.json syntax for all loaded packages'=>'%%/gitx_checkout'],
+			['Generate migrate up deploy.json syntax for all loaded packages'=>'%%/migrate_up'],
 		]);
 	}
 

@@ -133,9 +133,20 @@ class Console
 
 	protected function format_for_controller(string $string) : string
 	{
-		$bt = debug_backtrace(false, 2);
+		$controller = '??';
 
-		$controller = str_replace('_', '-', strtolower(substr($bt[1]['file'], strpos($bt[1]['file'], '/controllers/') + 17, -14)));
+		$bt = debug_backtrace(false, 8);
+
+		foreach ($bt as $record) {
+			$file = $record['file'];
+
+			$pos = strpos($file,'/controllers/');
+
+			if ($pos !== false) {
+				$controller = str_replace('_', '-', strtolower(substr($file, $pos + 17, -14)));
+			}
+
+		}
 
 		return str_replace('%%', $controller, $string);
 	}
@@ -306,7 +317,7 @@ class Console
 		 * Warning Multiple Exists
 		 */
 
-		/* first type by option string because if that's there then we are done. */
+		/* first search by option string because if that's there then we are done. */
 		$value = $this->get_arg_by_option($option_string, false, '', '%%not-found%%');
 
 		if ($value != '%%not-found%%') {
@@ -322,7 +333,7 @@ class Console
 			return $this->get_arg_by_position($named, $required, $text, $default, $option_string);
 		} else {
 			/* full stop */
-			$this->error('Please option or position number.');
+			$this->error('Please supply option or position number.');
 		}
 	}
 
@@ -383,7 +394,6 @@ class Console
 		/**
 		 * Warning Multiple Exists
 		 */
-
 		foreach ($this->args as $idx=>$value) {
 			if (strtolower($value) == '-'.$named) {
 				return $this->get_arg_by_position(($idx + 1), $required, $text, $default);
@@ -391,7 +401,7 @@ class Console
 		}
 
 		/* let this handle the default, required, etc... */
-		return $this->get_arg_by_position(-1, $required, $text, $default);
+		return $this->get_arg_by_position(-999, $required, $text, $default);
 	}
 
 	/**
