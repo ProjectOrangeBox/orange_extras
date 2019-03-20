@@ -2,12 +2,60 @@
 
 class Migration_base
 {
+	/**
+	 * $dbforge
+	 *
+	 * @var undefined
+	 */
 	protected $dbforge;
+
+	/**
+	 * $_error_string
+	 *
+	 * @var string
+	 */
 	protected $_error_string = '';
+
+	/**
+	 * $console
+	 *
+	 * @var undefined
+	 */
 	protected $console;
+
+	/**
+	 * $hash
+	 *
+	 * @var null
+	 */
 	protected $hash = null;
+
+	/**
+	 * $migration
+	 *
+	 * @var undefined
+	 */
 	protected $migration;
 
+	/**
+	 * $migration_file
+	 *
+	 * @var undefined
+	 */
+	protected $migration_file;
+
+	/**
+	 * $migration_package
+	 *
+	 * @var undefined
+	 */
+	protected $migration_package;
+
+	/**
+	 * __construct
+	 *
+	 * @return void
+	 */
 	public function __construct()
 	{
 		/* we will probbly need this */
@@ -27,53 +75,81 @@ class Migration_base
 		return $this->_error_string;
 	}
 
-	/* wrapper */
+	/**
+	 * up
+	 *
+	 * @return void
+	 */
 	public function up()
 	{
 		return true;
 	}
 
-	/* wrapper */
+	/**
+	 * down
+	 *
+	 * @return void
+	 */
 	public function down()
 	{
 		return true;
 	}
 
+	/**
+	 * get_hash
+	 *
+	 * @return void
+	 */
 	protected function get_hash()
 	{
-		$children = debug_backtrace(null, 1);
+		return $this->hash;
+	}
+
+	/**
+	 * hash
+	 *
+	 * @return void
+	 */
+	protected function hash()
+	{
+		return $this->hash;
+	}
+
+	/**
+	 * migration
+	 *
+	 * @param mixed $direction
+	 * @param mixed $as_string=true
+	 * @return void
+	 */
+	protected function migration($direction, $as_string=true)
+	{
+		/* one back trace here and thats it! */
+		$children = debug_backtrace();
 
 		$file = $children[0]['file'];
 
-		$this->hash = substr(str_replace([ROOTPATH.'/','/support/migrations'], '', $file), 0, -4);
+		$info = pathinfo($file);
 
-		return $this->hash;
-	}
-	
-	protected function hash()
-	{
-		$children = debug_backtrace(null, 1);
+		$this->migration_file = $info['filename'];
+		$this->migration_package = str_replace([ROOTPATH.'/','/support/migrations'], '',$info['dirname']);
+		$this->hash = $this->migration_package.'/'.$info['filename'];
 
-		$this->hash = md5($children[0]['file']);
-
-		return $this->hash;
-	}
-	
-	protected function migration($direction, $as_string=true)
-	{
-		$children = debug_backtrace(null, 1);
-		
-		$this->hash = md5($children[0]['file']);
-		
 		$data = [
-			'migration'=>substr(str_replace(ROOTPATH, '', $children[0]['file']), 0, -4),
+			'migration'=>$this->migration_file,
 			'direction'=>$direction,
-			'hash'=>md5($children[0]['file']),
+			'hash'=>$this->hash,
 		];
-		
+
 		return ($as_string) ? 'Migrations: '.$data['migration'].PHP_EOL.' Direction: '.$data['direction'].PHP_EOL.'      Hash: '.$data['hash'].PHP_EOL.PHP_EOL : $data;
 	}
 
+	/**
+	 * e
+	 *
+	 * @param mixed $output
+	 * @return void
+	 */
 	protected function e($output)
 	{
 		if (is_cli()) {
@@ -81,13 +157,22 @@ class Migration_base
 		}
 	}
 
+	/**
+	 * _get_package
+	 *
+	 * @return void
+	 */
 	protected function _get_package()
 	{
-		$children = debug_backtrace(null, 1);
-
-		return str_replace(ROOTPATH, '', dirname(dirname(dirname($children[1]['file']))));
+		return $this->migration_package;
 	}
 
+	/**
+	 * _copy_config
+	 *
+	 * @param mixed $filename
+	 * @return void
+	 */
 	protected function _copy_config($filename)
 	{
 		$filename = trim($filename, '/');
@@ -111,6 +196,12 @@ class Migration_base
 		return $success;
 	}
 
+	/**
+	 * _unlink_config
+	 *
+	 * @param mixed $filename
+	 * @return void
+	 */
 	protected function _unlink_config($filename)
 	{
 		$name = basename($filename, '.php');
@@ -125,6 +216,12 @@ class Migration_base
 		return $success;
 	}
 
+	/**
+	 * _link_public
+	 *
+	 * @param mixed $path
+	 * @return void
+	 */
 	protected function _link_public($path)
 	{
 		$package_folder = ROOTPATH.$this->_get_package().'/public/'.ltrim($path, '/');
@@ -147,6 +244,12 @@ class Migration_base
 		return true;
 	}
 
+	/**
+	 * _unlink_public
+	 *
+	 * @param mixed $path
+	 * @return void
+	 */
 	protected function _unlink_public($path)
 	{
 		$public_folder = WWW.'/'.ltrim($path, '/');
@@ -154,7 +257,12 @@ class Migration_base
 		return unlink($public_folder);
 	}
 
-	/* these are only added to the var folder */
+	/**
+	 * _add_rw_folder
+	 *
+	 * @param mixed $path
+	 * @return void
+	 */
 	protected function _add_rw_folder($path)
 	{
 		$var_folder = dirname(site_url('{rootpath}{uploads}', false));
@@ -162,7 +270,12 @@ class Migration_base
 		return (is_writable($var_folder)) ? @mkdir($var_folder.'/'.rtrim($path, '/'), 0777, true) : false;
 	}
 
-	/* these are only removed from the var folder */
+	/**
+	 * _remove_rw_folder
+	 *
+	 * @param mixed $path
+	 * @return void
+	 */
 	protected function _remove_rw_folder($path)
 	{
 		$var_folder = dirname(path('{rootpath}{uploads}', false));
@@ -170,6 +283,12 @@ class Migration_base
 		return $this->_rmdirr($var_folder.'/'.rtrim($path, '/'));
 	}
 
+	/**
+	 * _rmdirr
+	 *
+	 * @param mixed $directory
+	 * @return void
+	 */
 	protected function _rmdirr($directory)
 	{
 		/* checks */
@@ -198,6 +317,13 @@ class Migration_base
 		return rmdir($directory);
 	}
 
+	/**
+	 * _add_route
+	 *
+	 * @param mixed $text
+	 * @param mixed $before_text
+	 * @return void
+	 */
 	protected function _add_route($text, $before_text)
 	{
 		$text = rtrim($text);
@@ -227,6 +353,13 @@ class Migration_base
 		return file_put_contents($route_file, trim($new_contents).PHP_EOL);
 	}
 
+	/**
+	 * _remove_route
+	 *
+	 * @param mixed $text
+	 * @param mixed $quiet=false
+	 * @return void
+	 */
 	protected function _remove_route($text, $quiet=false)
 	{
 		$text = rtrim($text);
@@ -249,6 +382,13 @@ class Migration_base
 		return file_put_contents($route_file, trim($content).PHP_EOL);
 	}
 
+	/**
+	 * _describe_table
+	 *
+	 * @param mixed $tablename
+	 * @param mixed $database_config
+	 * @return void
+	 */
 	protected function _describe_table($tablename, $database_config = 'default')
 	{
 		$db = ci()->load->database($database_config, true);
@@ -262,6 +402,14 @@ class Migration_base
 		return $fields;
 	}
 
+	/**
+	 * _db_has_column
+	 *
+	 * @param mixed $column
+	 * @param mixed $tablename
+	 * @param mixed $database_config
+	 * @return void
+	 */
 	protected function _db_has_column($column, $tablename, $database_config = 'default')
 	{
 		$columns = $this->_describe_table($tablename, $database_config);
@@ -269,6 +417,15 @@ class Migration_base
 		return (is_array($columns)) ? in_array($column, $columns) : false;
 	}
 
+	/**
+	 * _find_n_replace
+	 *
+	 * @param mixed $file_path
+	 * @param mixed $find
+	 * @param mixed $replace
+	 * @param mixed $return=false
+	 * @return void
+	 */
 	protected function _find_n_replace($file_path, $find, $replace, $return=false)
 	{
 		$success = false;
@@ -285,6 +442,13 @@ class Migration_base
 	}
 
 	/* target = file target / link = name */
+	/**
+	 * _relative_symlink
+	 *
+	 * @param mixed $target
+	 * @param mixed $link
+	 * @return void
+	 */
 	protected function _relative_symlink($target, $link)
 	{
 		/* remove the link that might be there */
@@ -299,6 +463,13 @@ class Migration_base
 		return symlink(ROOTPATH.$target, ROOTPATH.$link);
 	}
 
+	/**
+	 * _getRelativePath
+	 *
+	 * @param mixed $from_path
+	 * @param mixed $to_path
+	 * @return void
+	 */
 	protected function _getRelativePath($from_path, $to_path)
 	{
 		/* some compatibility fixes for Windows paths */
