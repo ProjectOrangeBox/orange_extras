@@ -31,7 +31,7 @@ class HelpController extends \MY_Controller
 		$packages = get_packages(null, null, true);
 
 		ci('console')->br()->h1('Found Command Line Controllers');
-		ci('console')->out('These controllers where found because they followed the convention of placing cli controllers in a cli folder.')->br();
+		ci('console')->out('These controllers where found because they followed the convention of placing cli controllers into a folder named "cli".')->br();
 
 		$cli_controller = [];
 
@@ -52,8 +52,9 @@ class HelpController extends \MY_Controller
 			ci('console')->tab()->info($c);
 		}
 
-		ci('console')->br()->out('By convention each cli controller provides it\'s own "help" method.');
-		ci('console')->out('To access this method you would call cli/{controller}/help or even cli/{controller} if index is setup.');
+		ci('console')->br()->out('Each developer is responsible for adding there own "help" method.');
+		ci('console')->out('To access this method you would of course call <cyan>php index.php cli/{controller}/help</cyan>');
+		ci('console')->out('or even <cyan>php index.php cli/{controller}</cyan> if the developer setup index to also display the help.');
 		ci('console')->br()->out('<white>** if you have spark installed you can just type "spark controller/method...".</white>')->br();
 
 	}
