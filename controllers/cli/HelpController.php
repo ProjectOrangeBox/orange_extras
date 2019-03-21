@@ -30,30 +30,32 @@ class HelpController extends \MY_Controller
 	{
 		$packages = get_packages(null, null, true);
 
+		ci('console')->br()->h1('Found Command Line Controllers');
+		ci('console')->out('These controllers where found because they followed the convention of placing cli controllers in a cli folder.')->br();
+
+		$cli_controller = [];
+
 		foreach ($packages as $package) {
 			$cli_folder = $package.'/controllers/cli';
 
 			if (file_exists($cli_folder)) {
 				$matches = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($cli_folder, FilesystemIterator::SKIP_DOTS));
-
 				foreach ($matches as $match) {
-					$pathname = $match->getPathname();
-
-					$controller_position = strpos($pathname, '/controllers/');
-					$url = strtolower(substr($pathname, $controller_position + 13, -14));
-
-					ci('console')->br()->h2('Controller: cli/'.substr($url, 4))->br();
-
-					$exit = $this->shell('php '.ROOTPATH.'/public/index.php '.$url.'/help', $stdout, $stderr);
-
-					if (substr(strtolower(trim($stdout)), 0, 5) != 'error') {
-						echo $stdout;
-					} else {
-						ci('console')->out('<red>Controller URL CLI end point has no help method.</red>');
-					}
+					$cli_controller[] = substr(strtolower(substr($match->getPathname(), strpos($match->getPathname(), '/controllers/') + 13, -14)),4);
 				}
 			}
 		}
+
+		asort($cli_controller);
+
+		foreach ($cli_controller as $c) {
+			ci('console')->tab()->info($c);
+		}
+
+		ci('console')->br()->out('By convention each cli controller provides it\'s own "help" method.');
+		ci('console')->out('To access this method you would call cli/{controller}/help or even cli/{controller} if index is setup.');
+		ci('console')->br()->out('<white>** if you have spark installed you can just type "spark controller/method...".</white>')->br();
+
 	}
 
 	public function helpCliAction() : void
